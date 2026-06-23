@@ -1,15 +1,17 @@
-feat: add feedback widget, cat personality quiz (market research)
+feat: weight chart, group-buy counter, vaccination scheduler
 
-- FeedbackWidget: floating button with 4-step survey
-  - Step1: emoji reaction per tab (5 options + live result chart)
-  - Step2: feature request voting (8 candidates, max 3 picks)
-  - Step3: NPS score 0-10 with color coding
-  - Step4: free text comment (200 chars)
-  - All data persisted to localStorage, shown in completion screen
-- CatQuiz: 5-question cat personality test
-  - Classifies user into 4 types (health/beginner/shopper/allround)
-  - Shows personalized tips, product recommendations
-  - One-tap navigation to recommended tab
-- App.tsx: FeedbackWidget registered globally on all tabs
-- ChatTab: CatQuiz embedded below MiniTools
-- kdi.md: updated module list, folder structure, roadmap
+- MiniTools: add WeightTracker (5th tool)
+  - Date-keyed localStorage entries (max 14 records)
+  - SVG polyline chart with area fill and trend indicator
+  - Overdue/soon/good color coding
+- CommerceTab: live group-buy participant counter
+  - Per-product base + stored extra counts
+  - Progress bar with target headcount
+  - Auto-increment every 8s for live feel
+  - Modal shows real-time participant count
+- HospitalTab: VaccinationManager accordion section
+  - 8 preset vaccine types with intervals
+  - Custom interval override
+  - D-day badge (overdue/urgent/soon/ok states)
+  - localStorage persistence
+- kdi.md: updated progress table and roadmap checklist

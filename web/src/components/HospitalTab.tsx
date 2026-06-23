@@ -1,4 +1,176 @@
-import { Phone, Clock, MapPin, AlertTriangle, Navigation } from 'lucide-react'
+import { useState } from 'react'
+import { Phone, Clock, MapPin, AlertTriangle, Navigation, Syringe, Plus, Trash2, Bell } from 'lucide-react'
+
+// ── 예방접종 일정 관리 ─────────────────────────────────────────
+const VAC_KEY = 'supercap_vaccinations'
+
+interface VacRecord {
+  id: string
+  name: string
+  date: string   // YYYY-MM-DD
+  nextDate: string
+  memo: string
+}
+
+const VAC_TYPES = [
+  { label: '종합백신 (FVRCP)', interval: 365 },
+  { label: '광견병 (Rabies)', interval: 365 },
+  { label: '고양이 백혈병 (FeLV)', interval: 365 },
+  { label: '헤르페스 (FHV)', interval: 365 },
+  { label: '칼리시 (FCV)', interval: 365 },
+  { label: '심장사상충 예방', interval: 30 },
+  { label: '벼룩·진드기 예방', interval: 30 },
+  { label: '구충제', interval: 90 },
+]
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function daysUntil(dateStr: string): number {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr)
+  return Math.round((target.getTime() - today.getTime()) / 86400000)
+}
+
+function loadVaccinations(): VacRecord[] {
+  try { return JSON.parse(localStorage.getItem(VAC_KEY) ?? '[]') } catch { return [] }
+}
+
+function VaccinationManager() {
+  const [records, setRecords] = useState<VacRecord[]>(loadVaccinations)
+  const [adding, setAdding] = useState(false)
+  const [vacName, setVacName] = useState(VAC_TYPES[0].label)
+  const [vacDate, setVacDate] = useState(new Date().toISOString().slice(0, 10))
+  const [vacMemo, setVacMemo] = useState('')
+  const [customInterval, setCustomInterval] = useState(365)
+
+  function save(list: VacRecord[]) {
+    setRecords(list)
+    localStorage.setItem(VAC_KEY, JSON.stringify(list))
+  }
+
+  function addRecord() {
+    const interval = VAC_TYPES.find((v) => v.label === vacName)?.interval ?? customInterval
+    const rec: VacRecord = {
+      id: Date.now().toString(),
+      name: vacName,
+      date: vacDate,
+      nextDate: addDays(vacDate, interval),
+      memo: vacMemo.trim(),
+    }
+    save([...records, rec].sort((a, b) => a.nextDate.localeCompare(b.nextDate)))
+    setAdding(false)
+    setVacMemo('')
+  }
+
+  function removeRecord(id: string) {
+    save(records.filter((r) => r.id !== id))
+  }
+
+  const sorted = [...records].sort((a, b) => a.nextDate.localeCompare(b.nextDate))
+
+  return (
+    <div className="space-y-3">
+      {/* 레코드 목록 */}
+      {sorted.length === 0 && !adding && (
+        <p className="text-xs text-gray-400 text-center py-3">
+          아직 기록이 없어요.<br/>첫 접종 기록을 추가해보세요!
+        </p>
+      )}
+      {sorted.map((r) => {
+        const days = daysUntil(r.nextDate)
+        const urgent = days <= 7
+        const soon   = days <= 30
+        const overdue = days < 0
+        return (
+          <div
+            key={r.id}
+            className={`rounded-xl p-3 border ${overdue ? 'bg-red-50 border-red-200' : urgent ? 'bg-orange-50 border-orange-200' : soon ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-100'}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Syringe size={11} className={overdue ? 'text-red-500' : urgent ? 'text-orange-500' : 'text-gray-400'} />
+                  <p className="text-xs font-bold text-brand-dark truncate">{r.name}</p>
+                </div>
+                <p className="text-[10px] text-gray-400">
+                  접종일: {r.date} &nbsp;→&nbsp; 다음: {r.nextDate}
+                </p>
+                {r.memo && <p className="text-[10px] text-gray-400 mt-0.5">{r.memo}</p>}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 ${
+                  overdue ? 'bg-red-100 text-red-600' :
+                  urgent  ? 'bg-orange-100 text-orange-600' :
+                  soon    ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-green-100 text-green-700'
+                }`}>
+                  <Bell size={9} />
+                  {overdue ? `${Math.abs(days)}일 초과` : days === 0 ? '오늘!' : `D-${days}`}
+                </span>
+                <button onClick={() => removeRecord(r.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+
+      {/* 추가 폼 */}
+      {adding ? (
+        <div className="bg-white border border-brand-mint/30 rounded-xl p-3 space-y-2">
+          <p className="text-xs font-bold text-brand-dark mb-1">접종 기록 추가</p>
+          <select
+            value={vacName}
+            onChange={(e) => {
+              setVacName(e.target.value)
+              setCustomInterval(VAC_TYPES.find((v) => v.label === e.target.value)?.interval ?? 365)
+            }}
+            className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 outline-none bg-white"
+          >
+            {VAC_TYPES.map((v) => <option key={v.label} value={v.label}>{v.label}</option>)}
+          </select>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-400 mb-0.5">접종일</p>
+              <input type="date" value={vacDate} onChange={(e) => setVacDate(e.target.value)}
+                className="w-full text-xs border border-gray-200 rounded-xl px-2 py-2 outline-none focus:border-brand-mint" />
+            </div>
+            <div className="w-20">
+              <p className="text-[10px] text-gray-400 mb-0.5">재접종 주기(일)</p>
+              <input type="number" value={customInterval} onChange={(e) => setCustomInterval(Number(e.target.value))}
+                className="w-full text-xs border border-gray-200 rounded-xl px-2 py-2 outline-none focus:border-brand-mint" />
+            </div>
+          </div>
+          <input type="text" value={vacMemo} onChange={(e) => setVacMemo(e.target.value)}
+            placeholder="메모 (선택)"
+            className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-mint" />
+          <div className="flex gap-2">
+            <button onClick={addRecord}
+              className="flex-1 bg-brand-mint text-white rounded-xl py-2 text-xs font-semibold hover:bg-teal-500 transition-colors">
+              저장
+            </button>
+            <button onClick={() => setAdding(false)}
+              className="flex-1 border border-gray-200 rounded-xl py-2 text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+              취소
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-brand-mint border border-brand-mint/40 rounded-xl py-2.5 hover:bg-brand-mint/5 transition-colors active:scale-95"
+        >
+          <Plus size={13} /> 접종 기록 추가
+        </button>
+      )}
+    </div>
+  )
+}
 
 const HOSPITALS = [
   {
@@ -39,6 +211,8 @@ function naverDirectionUrl(name: string, addr: string) {
 }
 
 export default function HospitalTab() {
+  const [showVac, setShowVac] = useState(false)
+
   return (
     <div className="px-4 py-4 space-y-4">
 
@@ -65,6 +239,30 @@ export default function HospitalTab() {
             </a>
           </div>
         </div>
+      </div>
+
+      {/* 예방접종 일정 관리 */}
+      <div className="bg-white border border-brand-mint/30 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setShowVac(!showVac)}
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-brand-mint/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Syringe size={16} className="text-brand-mint" />
+            <div className="text-left">
+              <p className="text-sm font-bold text-brand-dark">예방접종 일정 관리</p>
+              <p className="text-[10px] text-gray-400">접종 기록·다음 일정 D-day 알림</p>
+            </div>
+          </div>
+          <span className="text-xs text-brand-mint font-semibold">{showVac ? '접기 ▲' : '펼치기 ▼'}</span>
+        </button>
+        {showVac && (
+          <div className="px-4 pb-4 border-t border-gray-50">
+            <div className="pt-3">
+              <VaccinationManager />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 증상 빠른 안내 */}

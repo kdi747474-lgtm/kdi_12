@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 // ── 고양이 나이 계산기 ──────────────────────────────────────────
 function CatAgeCalc() {
@@ -250,12 +250,153 @@ function DutyCalc() {
   )
 }
 
+// ── 체중 변화 그래프 ───────────────────────────────────────────
+const WEIGHT_KEY = 'supercap_weight_log'
+
+interface WeightEntry { date: string; weight: number }
+
+function loadWeights(): WeightEntry[] {
+  try { return JSON.parse(localStorage.getItem(WEIGHT_KEY) ?? '[]') } catch { return [] }
+}
+
+function WeightTracker() {
+  const [entries, setEntries] = useState<WeightEntry[]>(loadWeights)
+  const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function addEntry() {
+    const w = parseFloat(input)
+    if (!w || w < 0.5 || w > 20) return
+    const today = new Date().toISOString().slice(0, 10)
+    const next = [...entries.filter((e) => e.date !== today), { date: today, weight: w }]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-14)
+    setEntries(next)
+    localStorage.setItem(WEIGHT_KEY, JSON.stringify(next))
+    setInput('')
+    inputRef.current?.focus()
+  }
+
+  function removeEntry(date: string) {
+    const next = entries.filter((e) => e.date !== date)
+    setEntries(next)
+    localStorage.setItem(WEIGHT_KEY, JSON.stringify(next))
+  }
+
+  // SVG 미니 라인 차트
+  function renderChart() {
+    if (entries.length < 2) return null
+    const W = 280, H = 80, PAD = 8
+    const weights = entries.map((e) => e.weight)
+    const minW = Math.min(...weights) - 0.1
+    const maxW = Math.max(...weights) + 0.1
+    const points = entries.map((e, i) => {
+      const x = PAD + (i / (entries.length - 1)) * (W - PAD * 2)
+      const y = H - PAD - ((e.weight - minW) / (maxW - minW)) * (H - PAD * 2)
+      return `${x},${y}`
+    })
+    const lastTwo = entries.slice(-2)
+    const trend = lastTwo[1].weight - lastTwo[0].weight
+
+    return (
+      <div className="mt-2 bg-white rounded-xl p-2 border border-gray-100">
+        <div className="flex items-center justify-between mb-1 px-1">
+          <p className="text-[10px] font-semibold text-gray-500">최근 {entries.length}회 기록</p>
+          <span className={`flex items-center gap-0.5 text-[10px] font-bold ${
+            trend < -0.05 ? 'text-blue-500' : trend > 0.05 ? 'text-red-500' : 'text-gray-500'
+          }`}>
+            {trend < -0.05 ? <TrendingDown size={11} /> : trend > 0.05 ? <TrendingUp size={11} /> : <Minus size={11} />}
+            {trend > 0 ? '+' : ''}{trend.toFixed(2)}kg
+          </span>
+        </div>
+        <svg width={W} height={H} className="w-full">
+          {/* 그리드 라인 */}
+          {[0.25, 0.5, 0.75].map((r) => (
+            <line key={r} x1={PAD} y1={PAD + r * (H - PAD * 2)} x2={W - PAD} y2={PAD + r * (H - PAD * 2)}
+              stroke="#f3f4f6" strokeWidth={1} />
+          ))}
+          {/* 면적 */}
+          <polygon
+            points={`${PAD},${H - PAD} ${points.join(' ')} ${W - PAD},${H - PAD}`}
+            fill="rgba(236,72,153,0.08)"
+          />
+          {/* 선 */}
+          <polyline points={points.join(' ')} fill="none" stroke="#ec4899" strokeWidth={2} strokeLinejoin="round" />
+          {/* 점 */}
+          {points.map((pt, i) => {
+            const [cx, cy] = pt.split(',').map(Number)
+            return <circle key={i} cx={cx} cy={cy} r={3} fill="#ec4899" />
+          })}
+        </svg>
+        <div className="flex justify-between px-1 mt-0.5">
+          <span className="text-[9px] text-gray-400">{entries[0].date.slice(5)}</span>
+          <span className="text-[9px] text-gray-400">{entries[entries.length - 1].date.slice(5)}</span>
+        </div>
+      </div>
+    )
+  }
+
+  const latest = entries[entries.length - 1]
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="number"
+          step="0.1"
+          placeholder="오늘 체중 (kg, 예: 4.3)"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && addEntry()}
+          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-purple-300"
+        />
+        <button
+          onClick={addEntry}
+          className="bg-purple-500 text-white text-xs rounded-xl px-3 font-semibold hover:bg-purple-600 active:scale-95 transition-all"
+        >
+          기록
+        </button>
+      </div>
+
+      {latest && (
+        <div className="flex items-center justify-between bg-purple-50 rounded-xl px-3 py-2">
+          <p className="text-xs text-gray-500">최근 체중</p>
+          <p className="text-lg font-bold text-purple-600">{latest.weight} kg</p>
+          <p className="text-[10px] text-gray-400">{latest.date.slice(5)}</p>
+        </div>
+      )}
+
+      {renderChart()}
+
+      {entries.length > 0 && (
+        <div className="space-y-1 max-h-28 overflow-y-auto">
+          {[...entries].reverse().slice(0, 7).map((e) => (
+            <div key={e.date} className="flex items-center justify-between text-xs px-1">
+              <span className="text-gray-400">{e.date}</span>
+              <span className="font-semibold text-brand-dark">{e.weight} kg</span>
+              <button onClick={() => removeEntry(e.date)} className="text-gray-300 hover:text-red-400 transition-colors">
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {entries.length === 0 && (
+        <p className="text-xs text-gray-400 text-center py-2">아직 기록이 없어요. 오늘 첫 기록을 남겨보세요!</p>
+      )}
+    </div>
+  )
+}
+
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const TOOLS = [
   { id: 'age',  emoji: '🎂', label: '나이 계산기',   sub: '사람 나이 환산',  color: 'border-brand-mint/40 bg-brand-mint/5',   Component: CatAgeCalc },
   { id: 'food', emoji: '🍽️', label: '사료량 계산기', sub: '몸무게별 권장량', color: 'border-brand-pink/40 bg-brand-pink/5',   Component: FoodCalc },
   { id: 'safe', emoji: '⚠️', label: '위험 음식 체크', sub: '먹여도 될까요?', color: 'border-brand-amber/40 bg-brand-amber/5', Component: FoodCheck },
-  { id: 'duty', emoji: '✈️', label: '관부가세 계산기', sub: '직구 세금 확인', color: 'border-blue-200/60 bg-blue-50/50',       Component: DutyCalc },
+  { id: 'duty',   emoji: '✈️', label: '관부가세 계산기', sub: '직구 세금 확인',   color: 'border-blue-200/60 bg-blue-50/50',      Component: DutyCalc },
+  { id: 'weight', emoji: '⚖️', label: '체중 그래프',    sub: '날짜별 체중 기록', color: 'border-purple-200/60 bg-purple-50/50',  Component: WeightTracker },
 ]
 
 export default function MiniTools() {

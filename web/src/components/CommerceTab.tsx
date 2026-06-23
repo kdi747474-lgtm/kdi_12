@@ -1,9 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ShoppingCart, Clock, Flame, ExternalLink, X, Users, CheckCircle } from 'lucide-react'
+
+// ── 공동구매 인원 현황 (localStorage) ─────────────────────────
+const GROUP_KEY = 'supercap_group_counts'
+const BASE_COUNTS: Record<number, number> = { 1: 47, 2: 23, 3: 61, 4: 15, 5: 38, 6: 82 }
+const TARGET_COUNTS: Record<number, number> = { 1: 100, 2: 50, 3: 100, 4: 30, 5: 80, 6: 100 }
+
+function loadCounts(): Record<number, number> {
+  try { return JSON.parse(localStorage.getItem(GROUP_KEY) ?? '{}') } catch { return {} }
+}
 
 type Product = typeof PRODUCTS[number]
 
-function CartModal({ product, onClose }: { product: Product; onClose: () => void }) {
+function CartModal({ product, onClose, participantCount }: { product: Product; onClose: () => void; participantCount: number }) {
   const [qty, setQty] = useState(1)
   const [done, setDone] = useState(false)
   const unitPrice = parseInt(product.price.replace(',', ''), 10)
@@ -58,7 +67,7 @@ function CartModal({ product, onClose }: { product: Product; onClose: () => void
 
         <div className="flex items-center gap-2 bg-brand-pink/5 rounded-xl px-3 py-2 mb-4">
           <Users size={14} className="text-brand-pink flex-shrink-0" />
-          <p className="text-xs text-gray-500">현재 <span className="font-bold text-brand-pink">23명</span> 함께 신청 중</p>
+          <p className="text-xs text-gray-500">현재 <span className="font-bold text-brand-pink">{participantCount}명</span> 함께 신청 중</p>
         </div>
 
         <div className="flex items-center justify-between mb-4 px-1">
@@ -156,10 +165,30 @@ const FOREIGN_SITES = [
 
 export default function CommerceTab() {
   const [cartProduct, setCartProduct] = useState<Product | null>(null)
+  const [extraCounts, setExtraCounts] = useState<Record<number, number>>(loadCounts)
+
+  useEffect(() => {
+    // 페이지 로드 시 각 상품에 랜덤 소폭 증가 (생동감)
+    const timer = setInterval(() => {
+      setExtraCounts((prev) => {
+        const id = [1, 2, 3, 4, 5, 6][Math.floor(Math.random() * 6)]
+        const next = { ...prev, [id]: (prev[id] ?? 0) + 1 }
+        localStorage.setItem(GROUP_KEY, JSON.stringify(next))
+        return next
+      })
+    }, 8000)
+    return () => clearInterval(timer)
+  }, [])
+
+  function getCount(id: number) {
+    return (BASE_COUNTS[id] ?? 0) + (extraCounts[id] ?? 0)
+  }
+
+  function getTarget(id: number) { return TARGET_COUNTS[id] ?? 100 }
 
   return (
     <div className="px-4 py-4 space-y-5">
-      {cartProduct && <CartModal product={cartProduct} onClose={() => setCartProduct(null)} />}
+      {cartProduct && <CartModal product={cartProduct} onClose={() => setCartProduct(null)} participantCount={getCount(cartProduct.id)} />}
       {/* Banner */}
       <div className="bg-gradient-to-r from-brand-pink to-pink-400 rounded-2xl p-4 text-white">
         <p className="text-xs font-semibold opacity-80 mb-1">🌏 해외 트렌드 직구 공동구매</p>
@@ -251,8 +280,28 @@ export default function CommerceTab() {
               </div>
               <p className="text-sm font-semibold text-brand-dark truncate">{p.name}</p>
               <p className="text-xs text-gray-400">{p.origin}</p>
+              {/* 모집 인원 진행바 */}
+              {p.badge.startsWith('공구') && (() => {
+                const cur = getCount(p.id)
+                const tgt = getTarget(p.id)
+                const pct = Math.min(100, Math.round((cur / tgt) * 100))
+                return (
+                  <div className="mt-1.5">
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
+                      <span className="flex items-center gap-0.5"><Users size={9} />{cur}명 참여</span>
+                      <span>목표 {tgt}명 ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${pct >= 80 ? 'bg-brand-danger' : 'bg-brand-pink'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
-            <div className="text-right flex-shrink-0">
+            <div className="text-right flex-shrink-0 self-start">
               <p className="text-sm font-bold text-brand-pink">{p.price}원</p>
               <button
                 onClick={() => setCartProduct(p)}
