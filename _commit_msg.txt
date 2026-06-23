@@ -1,17 +1,19 @@
-feat: weight chart, group-buy counter, vaccination scheduler
+feat: cat profile, community write, education progress tracking
 
-- MiniTools: add WeightTracker (5th tool)
-  - Date-keyed localStorage entries (max 14 records)
-  - SVG polyline chart with area fill and trend indicator
-  - Overdue/soon/good color coding
-- CommerceTab: live group-buy participant counter
-  - Per-product base + stored extra counts
-  - Progress bar with target headcount
-  - Auto-increment every 8s for live feel
-  - Modal shows real-time participant count
-- HospitalTab: VaccinationManager accordion section
-  - 8 preset vaccine types with intervals
-  - Custom interval override
-  - D-day badge (overdue/urgent/soon/ok states)
-  - localStorage persistence
-- kdi.md: updated progress table and roadmap checklist
+- CatProfile: full cat registration modal + header chip
+  - Name, breed (11 options), birth year, gender, neutered, weight, color
+  - localStorage persistence, saman-age conversion on birthYear input
+  - CatProfileChip shows cat name in App header
+- CommunityTab: fully working community board
+  - Board filter (5 categories) with active state
+  - Real write modal: board/region/title/body + author from CatProfile
+  - localStorage post storage (seeded with 4 default posts)
+  - Per-post like toggle with localStorage persistence
+  - Expand/collapse long posts
+- EducationTab: real lesson progress tracking
+  - Click course -> LessonModal with sequential lesson unlock
+  - Mark lesson complete -> progress saved to localStorage
+  - Overall progress bar across all open courses
+  - Gold badge on course completion
+- App.tsx: CatProfileChip in header, profile modal wired up
+- kdi.md: updated module list and roadmap

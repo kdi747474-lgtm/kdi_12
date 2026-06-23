@@ -7,6 +7,7 @@ import CommunityTab from './components/CommunityTab'
 import EducationTab from './components/EducationTab'
 import HospitalTab from './components/HospitalTab'
 import FeedbackWidget from './components/FeedbackWidget'
+import CatProfile, { CatProfileChip } from './components/CatProfile'
 
 const TABS: { id: TabId; label: string; Icon: React.ElementType; activeColor: string; dotColor: string }[] = [
   { id: 'chat',      label: 'AI 상담', Icon: MessageCircle, activeColor: 'text-brand-pink',   dotColor: 'bg-brand-pink' },
@@ -38,8 +39,8 @@ const INIT_MESSAGES: ChatMessage[] = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('chat')
-  // 메시지 상태를 App에서 관리 → 탭 이동해도 대화 유지
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INIT_MESSAGES)
+  const [profileOpen, setProfileOpen] = useState(false)
   const { emoji, title } = HEADER[activeTab]
 
   return (
@@ -54,6 +55,7 @@ export default function App() {
             <p className="text-sm font-bold text-brand-dark">{title}</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <CatProfileChip onClick={() => setProfileOpen(true)} />
             {activeTab === 'chat' && (
               <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                 hasGPT ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -84,6 +86,9 @@ export default function App() {
           {activeTab === 'education' && <EducationTab />}
           {activeTab === 'hospital'  && <HospitalTab />}
         </main>
+
+        {/* 냥이 프로필 모달 */}
+        <CatProfile open={profileOpen} onClose={() => setProfileOpen(false)} />
 
         {/* 플로팅 피드백 버튼 */}
         <FeedbackWidget activeTab={activeTab} />
