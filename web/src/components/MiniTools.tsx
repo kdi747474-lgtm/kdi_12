@@ -165,11 +165,97 @@ function FoodCheck() {
   )
 }
 
+// ── 관부가세 계산기 ────────────────────────────────────────────
+const EXCHANGE_RATE = 1380 // 고정 환율 (USD → KRW 참고용)
+const DUTY_RATES: { label: string; dutyRate: number; vatBase: number }[] = [
+  { label: '사료 / 간식',     dutyRate: 0.08, vatBase: 0.10 },
+  { label: '영양제 / 보조제', dutyRate: 0.06, vatBase: 0.10 },
+  { label: '장난감 / 용품',   dutyRate: 0.08, vatBase: 0.10 },
+  { label: '의류 / 캐리어',   dutyRate: 0.13, vatBase: 0.10 },
+]
+
+function DutyCalc() {
+  const [usd, setUsd] = useState('')
+  const [catIdx, setCatIdx] = useState(0)
+  const [shipping, setShipping] = useState('15')
+
+  const price = parseFloat(usd) || 0
+  const ship  = parseFloat(shipping) || 0
+  const cat   = DUTY_RATES[catIdx]
+  const totalUsd = price + ship
+  const totalKrw = Math.round(totalUsd * EXCHANGE_RATE)
+  const exempt   = totalUsd <= 150
+
+  const dutyBase = Math.round(price * EXCHANGE_RATE)
+  const duty     = exempt ? 0 : Math.round(dutyBase * cat.dutyRate)
+  const vatBase  = dutyBase + duty
+  const vat      = exempt ? 0 : Math.round(vatBase * cat.vatBase)
+  const grandTotal = totalKrw + duty + vat
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="상품가 (USD)"
+          value={usd}
+          onChange={(e) => setUsd(e.target.value)}
+          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-300"
+        />
+        <input
+          type="number"
+          placeholder="배송비"
+          value={shipping}
+          onChange={(e) => setShipping(e.target.value)}
+          className="w-20 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-blue-300"
+        />
+      </div>
+      <select
+        value={catIdx}
+        onChange={(e) => setCatIdx(Number(e.target.value))}
+        className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2 outline-none bg-white"
+      >
+        {DUTY_RATES.map((d, i) => (
+          <option key={i} value={i}>{d.label} (관세 {d.dutyRate * 100}%)</option>
+        ))}
+      </select>
+      {price > 0 && (
+        <div className={`rounded-xl p-3 text-xs space-y-1.5 ${exempt ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
+          <p className={`font-bold text-sm text-center mb-2 ${exempt ? 'text-green-700' : 'text-blue-700'}`}>
+            {exempt ? '✅ 면세 대상 (USD 150 이하)' : '💰 관부가세 발생'}
+          </p>
+          <div className="flex justify-between text-gray-600">
+            <span>상품가</span><span>USD {price.toFixed(2)} ≈ {(price * EXCHANGE_RATE).toLocaleString()}원</span>
+          </div>
+          <div className="flex justify-between text-gray-600">
+            <span>배송비</span><span>USD {ship.toFixed(2)} ≈ {(ship * EXCHANGE_RATE).toLocaleString()}원</span>
+          </div>
+          {!exempt && (
+            <>
+              <div className="border-t border-gray-200 pt-1.5 flex justify-between text-gray-600">
+                <span>관세 ({cat.dutyRate * 100}%)</span><span>+{duty.toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>부가세 (10%)</span><span>+{vat.toLocaleString()}원</span>
+              </div>
+            </>
+          )}
+          <div className="border-t border-gray-300 pt-1.5 flex justify-between font-bold text-brand-dark">
+            <span>총 예상 금액</span><span>{grandTotal.toLocaleString()}원</span>
+          </div>
+          <p className="text-[10px] text-gray-400 text-center pt-0.5">환율 {EXCHANGE_RATE}원/USD 기준 · 실제와 다를 수 있음</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 const TOOLS = [
-  { id: 'age',  emoji: '🎂', label: '나이 계산기',  sub: '사람 나이 환산',  color: 'border-brand-mint/40 bg-brand-mint/5',   Component: CatAgeCalc },
+  { id: 'age',  emoji: '🎂', label: '나이 계산기',   sub: '사람 나이 환산',  color: 'border-brand-mint/40 bg-brand-mint/5',   Component: CatAgeCalc },
   { id: 'food', emoji: '🍽️', label: '사료량 계산기', sub: '몸무게별 권장량', color: 'border-brand-pink/40 bg-brand-pink/5',   Component: FoodCalc },
-  { id: 'safe', emoji: '⚠️', label: '위험 음식 체크', sub: '먹여도 될까요?',  color: 'border-brand-amber/40 bg-brand-amber/5', Component: FoodCheck },
+  { id: 'safe', emoji: '⚠️', label: '위험 음식 체크', sub: '먹여도 될까요?', color: 'border-brand-amber/40 bg-brand-amber/5', Component: FoodCheck },
+  { id: 'duty', emoji: '✈️', label: '관부가세 계산기', sub: '직구 세금 확인', color: 'border-blue-200/60 bg-blue-50/50',       Component: DutyCalc },
 ]
 
 export default function MiniTools() {
@@ -178,7 +264,7 @@ export default function MiniTools() {
   return (
     <div className="px-4 pt-3 pb-1">
       <p className="text-[10px] font-semibold text-gray-400 mb-2 uppercase tracking-wide">생활 도구</p>
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className="grid grid-cols-2 gap-2 mb-2">
         {TOOLS.map((t) => (
           <button
             key={t.id}

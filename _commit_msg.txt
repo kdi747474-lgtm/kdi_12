@@ -1,0 +1,6 @@
+feat: add duty calculator, cart modal, extended chatbot keywords
+
+- MiniTools: add customs duty calculator (4th tool, USD->KRW, tax-free check)
+- CommerceTab: implement group-buy cart modal with qty selector + success screen
+- chatbot.ts: extend commerce keywords (direct purchase, overseas shopping sites)
+- kdi.md: update progress table, test cases, roadmap checklist

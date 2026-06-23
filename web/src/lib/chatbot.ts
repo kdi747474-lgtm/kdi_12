@@ -16,7 +16,9 @@ const RULES: Rule[] = [
     requires_hospital: true,
   },
   {
-    keywords: ['사료', '모래', '장난감', '캣타워', '공구', '용품', '스크래처', '화장실'],
+    keywords: ['사료', '모래', '장난감', '캣타워', '공구', '용품', '스크래처', '화장실',
+               '직구', '쇼핑', '구매', '펫프렌즈', '쿠팡', 'chewy', 'iherb', 'zooplus',
+               '관부가세', '배송비', '해외직구', '할인', '공동구매'],
     module: 'commerce',
     urgency: 'low',
     requires_hospital: false,
@@ -172,12 +174,12 @@ function fallback(message: string): { reply: string; action: SystemAction } {
   const action = detectAction(message)
   const replies: Record<string, string> = {
     hospital:  '집사님, 말씀하신 증상은 꼭 확인이 필요해요 🏥 자가 진단보다는 빠르게 가까운 24시간 동물병원을 방문해 주세요.',
-    commerce:  '좋은 선택 고민 중이시군요! 🛒 알러뷰 캡에서 해외 트렌드 상품과 공동구매를 확인해보세요!',
+    commerce:  '좋은 선택 고민 중이시군요! 🛒 알러뷰 캡에서 국내·해외 쇼핑 사이트와 공동구매를 확인해보세요!',
     education: '고양이 행동은 이해하면 정말 재미있어요 😺 캡 스쿨에서 단계별 강의를 수강해보세요!',
     community: '동네 정보는 동네 집사님들이 제일 잘 아시죠 🏘️ 커뮤니티 동네 소식통에서 나눠보세요!',
   }
   return {
-    reply: replies[action.recommended_module] ?? '고양이와 함께하는 일상 고민이 있으시면 편하게 말씀해 주세요! 🐱',
+    reply: replies[action.recommended_module] ?? '고양이와 함께하는 일상, 무엇이든 편하게 물어보세요! 🐱',
     action,
   }
 }

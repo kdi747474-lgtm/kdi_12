@@ -1,4 +1,83 @@
-import { ShoppingCart, Clock, Flame, ExternalLink } from 'lucide-react'
+import { useState } from 'react'
+import { ShoppingCart, Clock, Flame, ExternalLink, X, Users, CheckCircle } from 'lucide-react'
+
+type Product = typeof PRODUCTS[number]
+
+function CartModal({ product, onClose }: { product: Product; onClose: () => void }) {
+  const [qty, setQty] = useState(1)
+  const [done, setDone] = useState(false)
+  const unitPrice = parseInt(product.price.replace(',', ''), 10)
+  const total = (unitPrice * qty).toLocaleString()
+
+  if (done) {
+    return (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+        <div className="bg-white w-full max-w-[430px] rounded-t-3xl p-6 text-center animate-slide-up" onClick={(e) => e.stopPropagation()}>
+          <CheckCircle size={48} className="text-brand-mint mx-auto mb-3" />
+          <p className="text-lg font-bold text-brand-dark">공구 신청 완료!</p>
+          <p className="text-sm text-gray-500 mt-1">{product.name}</p>
+          <p className="text-xs text-gray-400 mt-1">{qty}개 · {total}원</p>
+          <p className="text-xs text-brand-pink mt-3">마감 후 일괄 주문 · 배송 안내 드려요 🐾</p>
+          <button onClick={onClose} className="mt-5 w-full bg-brand-pink text-white rounded-2xl py-3 font-semibold text-sm">확인</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+      <div className="bg-white w-full max-w-[430px] rounded-t-3xl p-5 animate-slide-up" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-bold text-brand-dark">공동구매 신청</p>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        </div>
+
+        <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 mb-4">
+          <span className="text-4xl">{product.emoji}</span>
+          <div>
+            <p className="text-sm font-semibold text-brand-dark">{product.name}</p>
+            <p className="text-xs text-gray-400">{product.origin}</p>
+            <p className="text-sm font-bold text-brand-pink mt-0.5">{product.price}원 / 개</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-brand-dark">수량</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setQty(Math.max(1, qty - 1))}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+            >−</button>
+            <span className="text-sm font-bold w-6 text-center">{qty}</span>
+            <button
+              onClick={() => setQty(Math.min(10, qty + 1))}
+              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+            >+</button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 bg-brand-pink/5 rounded-xl px-3 py-2 mb-4">
+          <Users size={14} className="text-brand-pink flex-shrink-0" />
+          <p className="text-xs text-gray-500">현재 <span className="font-bold text-brand-pink">23명</span> 함께 신청 중</p>
+        </div>
+
+        <div className="flex items-center justify-between mb-4 px-1">
+          <p className="text-sm text-gray-500">총 결제 예정금액</p>
+          <p className="text-lg font-bold text-brand-dark">{total}원</p>
+        </div>
+
+        <button
+          onClick={() => setDone(true)}
+          className="w-full bg-brand-pink text-white rounded-2xl py-3 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-pink-500 transition-colors"
+        >
+          <ShoppingCart size={16} />
+          공구 신청하기
+        </button>
+        <p className="text-[10px] text-gray-400 text-center mt-2">결제는 공구 마감 후 진행됩니다</p>
+      </div>
+    </div>
+  )
+}
 
 const PRODUCTS = [
   { id: 1, emoji: '🪨', name: '두부 & 활성탄 저먼지 모래', origin: '🇯🇵 일본 직구', price: '28,900', badge: '공구 D-3', hot: true },
@@ -76,8 +155,11 @@ const FOREIGN_SITES = [
 ]
 
 export default function CommerceTab() {
+  const [cartProduct, setCartProduct] = useState<Product | null>(null)
+
   return (
     <div className="px-4 py-4 space-y-5">
+      {cartProduct && <CartModal product={cartProduct} onClose={() => setCartProduct(null)} />}
       {/* Banner */}
       <div className="bg-gradient-to-r from-brand-pink to-pink-400 rounded-2xl p-4 text-white">
         <p className="text-xs font-semibold opacity-80 mb-1">🌏 해외 트렌드 직구 공동구매</p>
@@ -172,7 +254,10 @@ export default function CommerceTab() {
             </div>
             <div className="text-right flex-shrink-0">
               <p className="text-sm font-bold text-brand-pink">{p.price}원</p>
-              <button className="mt-1 flex items-center gap-1 text-xs bg-brand-pink text-white rounded-full px-3 py-1 hover:bg-pink-500 transition-colors">
+              <button
+                onClick={() => setCartProduct(p)}
+                className="mt-1 flex items-center gap-1 text-xs bg-brand-pink text-white rounded-full px-3 py-1 hover:bg-pink-500 active:scale-95 transition-all"
+              >
                 <ShoppingCart size={11} />
                 담기
               </button>
