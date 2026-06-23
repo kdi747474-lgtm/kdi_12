@@ -163,6 +163,115 @@ const FOREIGN_SITES = [
   },
 ]
 
+// ── 실제 고양이 용품 추천 리스트 ──────────────────────────────
+const REC_CATEGORIES = [
+  {
+    id: 'food',
+    label: '🍽️ 사료',
+    items: [
+      { brand: '로얄캐닌 (Royal Canin)', name: '인도어 퓨어 페린 400g', price: '18,900', tag: '국내 1위', link: 'https://www.petfriends.co.kr/search?keyword=%EB%A1%9C%EC%96%84%EC%BA%90%EB%8B%8C', site: '펫프렌즈', note: '실내묘 맞춤 · 헤어볼 관리' },
+      { brand: '오리젠 (Orijen)', name: '캣 & 키튼 340g', price: '28,500', tag: '★ 베스트', link: 'https://www.coupang.com/np/search?q=%EC%98%A4%EB%A6%AC%EC%A0%A0+%EA%B3%A0%EC%96%91%EC%9D%B4', site: '쿠팡', note: '그레인프리 · 80% 동물성' },
+      { brand: '힐스 (Hill\'s)', name: '사이언스다이어트 어덜트 1.6kg', price: '32,000', tag: '수의사 추천', link: 'https://www.petfriends.co.kr/search?keyword=%ED%9E%90%EC%8A%A4', site: '펫프렌즈', note: '균형 영양 · 체중 관리' },
+      { brand: '네츄럴발란스 (NB)', name: '리미티드 인그리디언트 연어 2.2kg', price: '54,000', tag: '피부·알러지', link: 'https://www.iherb.com/search?kw=natural+balance+cat', site: 'iHerb', note: '단일 단백질 · 알러지 고양이' },
+      { brand: '웰니스코어 (Wellness CORE)', name: '그레인프리 치킨 1.75kg', price: '47,000', tag: '직구 추천', link: 'https://www.chewy.com/s?query=wellness+core+cat', site: 'Chewy', note: '고단백 · 저탄수화물' },
+    ],
+  },
+  {
+    id: 'snack',
+    label: '🍬 간식',
+    items: [
+      { brand: '이나바 CIAO', name: '츄루 닭가슴살 14g×20개', price: '12,900', tag: '국민 간식', link: 'https://www.coupang.com/np/search?q=%EC%B8%84%EB%A3%A8', site: '쿠팡', note: '수분 보충 · 기호성 최상' },
+      { brand: '스키니 미니 (Skinnymini)', name: '동결건조 치킨 50g', price: '8,900', tag: '노성분 첨가', link: 'https://www.petfriends.co.kr/search?keyword=%EB%8F%99%EA%B2%B0%EA%B1%B4%EC%A1%B0', site: '펫프렌즈', note: '단일 재료 · 다이어트' },
+      { brand: '퓨리나 (Purina)', name: '덴탈라이프 어덜트 65g', price: '6,500', tag: '치석 관리', link: 'https://www.petfriends.co.kr/search?keyword=%EB%8D%B4%ED%83%88%EB%9D%BC%EC%9D%B4%ED%94%84', site: '펫프렌즈', note: '치석 제거 · 구취 예방' },
+    ],
+  },
+  {
+    id: 'litter',
+    label: '🪨 모래',
+    items: [
+      { brand: '그린데이', name: '두부모래 오리지널 7L', price: '14,900', tag: '두부 모래 1위', link: 'https://www.coupang.com/np/search?q=%EA%B7%B8%EB%A6%B0%EB%8D%B0%EC%9D%B4+%EB%91%90%EB%B6%80', site: '쿠팡', note: '저먼지 · 빠른 굳힘 · 친환경' },
+      { brand: '크리피 (Creamy)', name: '벤토나이트 솔리드 10kg', price: '18,900', tag: '강력 탈취', link: 'https://www.petfriends.co.kr/search?keyword=%ED%81%AC%EB%A6%AC%ED%94%BC', site: '펫프렌즈', note: '굳힘력 최강 · 장기간 사용' },
+      { brand: '월드베스트 (World\'s Best)', name: '콘 기반 모래 3.18kg', price: '22,000', tag: '직구 인기', link: 'https://www.chewy.com/s?query=world%27s+best+cat+litter', site: 'Chewy', note: '옥수수 원료 · 수세식 가능' },
+    ],
+  },
+  {
+    id: 'health',
+    label: '💊 영양제',
+    items: [
+      { brand: '닥터포 (Doctorpaw)', name: '오메가3 관절 영양제 60캡슐', price: '29,000', tag: '관절 케어', link: 'https://www.petfriends.co.kr/search?keyword=%EC%98%A4%EB%A9%94%EA%B0%803+%EA%B3%A0%EC%96%91%EC%9D%B4', site: '펫프렌즈', note: '관절·피모·면역 동시 케어' },
+      { brand: '뉴트리-베트 (Nutri-Vet)', name: '헤어볼 연질 캡슐 60정', price: '12,500', tag: '헤어볼', link: 'https://www.iherb.com/search?kw=nutri-vet+cat+hairball', site: 'iHerb', note: '헤어볼 예방 · 소화 촉진' },
+      { brand: '베트리 (Vetri)', name: '프로바이오틱스 60캡슐', price: '18,000', tag: '장 건강', link: 'https://www.iherb.com/search?kw=vetri-science+cat+probiotic', site: 'iHerb', note: '장내 유익균 · 소화 개선' },
+    ],
+  },
+  {
+    id: 'toy',
+    label: '🎮 장난감·용품',
+    items: [
+      { brand: '페드리오 (Petstages)', name: '오빅스 볼 인터랙티브 장난감', price: '16,900', tag: '인기', link: 'https://www.coupang.com/np/search?q=%EA%B3%A0%EC%96%91%EC%9D%B4+%EC%9E%90%EB%8F%99+%EC%9E%A5%EB%82%9C%EA%B0%90', site: '쿠팡', note: '자동 회전 · 혼자도 OK' },
+      { brand: '펑키캣 (FunKitty)', name: '에그서사이저 슬로우 피더', price: '12,000', tag: '다이어트', link: 'https://www.petfriends.co.kr/search?keyword=%EC%8A%AC%EB%A1%9C%EC%9A%B0+%ED%94%BC%EB%8D%94', site: '펫프렌즈', note: '폭식 방지 · 지능 자극' },
+      { brand: 'SureCat', name: '자동 분리급식기 (2구)', price: '89,000', tag: '스마트', link: 'https://www.coupang.com/np/search?q=%EC%9E%90%EB%8F%99%EA%B8%89%EC%8B%9D%EA%B8%B0+%EA%B3%A0%EC%96%91%EC%9D%B4', site: '쿠팡', note: '타이머 설정 · 1~2냥 추천' },
+      { brand: '룸바 (Litter-Robot)', name: 'Litter-Robot 4 자동 청소 화장실', price: '1,580,000', tag: '프리미엄', link: 'https://www.litter-robot.com', site: '공식몰', note: '완전 자동 청소 · 다냥가구 필수' },
+    ],
+  },
+]
+
+type RecTab = typeof REC_CATEGORIES[number]['id']
+
+function ProductRecSection() {
+  const [activeRec, setActiveRec] = useState<RecTab>('food')
+  const cat = REC_CATEGORIES.find((c) => c.id === activeRec)!
+
+  return (
+    <div>
+      <p className="text-sm font-bold text-brand-dark mb-2">🏆 카테고리별 용품 추천</p>
+
+      {/* 카테고리 탭 */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3">
+        {REC_CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setActiveRec(c.id as RecTab)}
+            className={`whitespace-nowrap text-xs rounded-full px-3 py-1.5 font-medium flex-shrink-0 transition-all ${
+              activeRec === c.id ? 'bg-brand-dark text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 제품 리스트 */}
+      <div className="space-y-2">
+        {cat.items.map((item, i) => (
+          <a
+            key={i}
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 bg-white border border-gray-100 rounded-xl p-3 hover:border-brand-pink/40 hover:shadow-sm active:scale-95 transition-all"
+          >
+            <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center text-sm font-bold text-brand-pink flex-shrink-0">
+              {i + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                <p className="text-[10px] font-semibold text-gray-400">{item.brand}</p>
+                <span className="text-[9px] bg-brand-mint/20 text-teal-700 rounded-full px-1.5 py-0.5">{item.tag}</span>
+              </div>
+              <p className="text-xs font-bold text-brand-dark truncate">{item.name}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{item.note} · {item.site}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xs font-bold text-brand-pink">{item.price}원</p>
+              <ExternalLink size={10} className="text-gray-300 ml-auto mt-1" />
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function CommerceTab() {
   const [cartProduct, setCartProduct] = useState<Product | null>(null)
   const [extraCounts, setExtraCounts] = useState<Record<number, number>>(loadCounts)
@@ -194,6 +303,16 @@ export default function CommerceTab() {
         <p className="text-xs font-semibold opacity-80 mb-1">🌏 해외 트렌드 직구 공동구매</p>
         <p className="text-lg font-bold leading-tight">집사님을 위한<br />이번 주 공구 모음</p>
         <p className="text-xs opacity-80 mt-2">최대 40% 할인 · 무료 배송</p>
+      </div>
+
+      {/* 카테고리별 용품 추천 */}
+      <ProductRecSection />
+
+      {/* 구분선 */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-gray-100" />
+        <p className="text-[11px] text-gray-400 font-medium">쇼핑몰 바로가기</p>
+        <div className="flex-1 h-px bg-gray-100" />
       </div>
 
       {/* Domestic Sites */}

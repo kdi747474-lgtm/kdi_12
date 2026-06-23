@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Phone, Clock, MapPin, AlertTriangle, Navigation, Syringe, Plus, Trash2, Bell } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Phone, Clock, MapPin, AlertTriangle, Navigation, Syringe, Plus, Trash2, Bell, Loader2, LocateFixed, ExternalLink } from 'lucide-react'
 
 // ── 예방접종 일정 관리 ─────────────────────────────────────────
 const VAC_KEY = 'supercap_vaccinations'
@@ -172,6 +172,29 @@ function VaccinationManager() {
   )
 }
 
+// ── GPS 기반 지도 URL ──────────────────────────────────────────
+type GpsState = 'idle' | 'loading' | 'success' | 'denied' | 'error'
+
+interface Coords { lat: number; lng: number; accuracy: number }
+
+function naverGpsUrl(lat: number, lng: number) {
+  // 내 위치 기준 동물병원 검색
+  return `https://map.naver.com/v5/search/%EB%8F%99%EB%AC%BC%EB%B3%91%EC%9B%90?c=${lng},${lat},15,0,0,0,dh`
+}
+
+function kakaoGpsUrl(lat: number, lng: number) {
+  return `https://map.kakao.com/?q=%EB%8F%99%EB%AC%BC%EB%B3%91%EC%9B%90&center=${lng},${lat}&from=roughmap`
+}
+
+function googleGpsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/search/%EB%8F%99%EB%AC%BC%EB%B3%91%EC%9B%90/@${lat},${lng},15z`
+}
+
+function naverEmergencyUrl(lat: number, lng: number) {
+  return `https://map.naver.com/v5/search/24%EC%8B%9C%EA%B0%84%20%EB%8F%99%EB%AC%BC%EB%B3%91%EC%9B%90?c=${lng},${lat},15,0,0,0,dh`
+}
+
+// ── 참고용 병원 목록 (GPS 전 기본 표시) ──────────────────────
 const HOSPITALS = [
   {
     id: 1, name: '24시 강남 고양이 동물병원', dist: '0.4km', open: true,
@@ -212,30 +235,125 @@ function naverDirectionUrl(name: string, addr: string) {
 
 export default function HospitalTab() {
   const [showVac, setShowVac] = useState(false)
+  const [gpsState, setGpsState] = useState<GpsState>('idle')
+  const [coords, setCoords]     = useState<Coords | null>(null)
+
+  const getLocation = useCallback(() => {
+    if (!navigator.geolocation) { setGpsState('error'); return }
+    setGpsState('loading')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) })
+        setGpsState('success')
+      },
+      (err) => {
+        setGpsState(err.code === 1 ? 'denied' : 'error')
+      },
+      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+    )
+  }, [])
 
   return (
     <div className="px-4 py-4 space-y-4">
+
+      {/* ── 내 위치 기반 병원 찾기 ── */}
+      <div className="bg-gradient-to-br from-blue-50 to-teal-50 border border-blue-200 rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <LocateFixed size={18} className="text-blue-500" />
+          <p className="text-sm font-bold text-brand-dark">내 위치로 병원 찾기</p>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">GPS로 현재 위치를 파악해 지도 앱에서 주변 동물병원을 바로 검색합니다.</p>
+
+        {gpsState === 'idle' && (
+          <button
+            onClick={getLocation}
+            className="w-full bg-blue-500 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-blue-600 active:scale-95 transition-all"
+          >
+            <LocateFixed size={15} /> 내 위치 GPS 켜기
+          </button>
+        )}
+
+        {gpsState === 'loading' && (
+          <div className="flex items-center justify-center gap-2 py-3 text-blue-500">
+            <Loader2 size={18} className="animate-spin" />
+            <span className="text-sm font-semibold">위치 확인 중...</span>
+          </div>
+        )}
+
+        {gpsState === 'denied' && (
+          <div className="space-y-2">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">
+              ⚠️ 위치 권한이 거부되었어요.<br />
+              브라우저 설정 → 사이트 권한 → 위치 → 허용 후 다시 시도해 주세요.
+            </div>
+            <button onClick={getLocation} className="w-full border border-blue-300 text-blue-600 rounded-xl py-2 text-xs font-semibold hover:bg-blue-50">
+              다시 시도
+            </button>
+          </div>
+        )}
+
+        {gpsState === 'error' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-700">
+            ⚠️ 위치를 가져오지 못했어요. 아래 지도 앱으로 직접 검색해 주세요.
+          </div>
+        )}
+
+        {gpsState === 'success' && coords && (
+          <div className="space-y-2">
+            <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex items-center gap-2">
+              <MapPin size={13} className="text-green-600 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-green-700">위치 확인 완료!</p>
+                <p className="text-[10px] text-gray-400">
+                  {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)} · 정확도 ±{coords.accuracy}m
+                </p>
+              </div>
+              <button onClick={getLocation} className="ml-auto text-[10px] text-gray-400 hover:text-blue-500">새로고침</button>
+            </div>
+
+            {/* 지도 앱 버튼 3개 */}
+            <div className="grid grid-cols-3 gap-2">
+              <a href={naverGpsUrl(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 bg-[#03C75A]/10 border border-[#03C75A]/30 rounded-xl py-2.5 hover:bg-[#03C75A]/20 transition-colors active:scale-95">
+                <span className="text-lg">🗺️</span>
+                <span className="text-[10px] font-bold text-[#03C75A]">네이버 지도</span>
+              </a>
+              <a href={kakaoGpsUrl(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 bg-yellow-50 border border-yellow-300 rounded-xl py-2.5 hover:bg-yellow-100 transition-colors active:scale-95">
+                <span className="text-lg">🔍</span>
+                <span className="text-[10px] font-bold text-yellow-700">카카오맵</span>
+              </a>
+              <a href={googleGpsUrl(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 bg-blue-50 border border-blue-200 rounded-xl py-2.5 hover:bg-blue-100 transition-colors active:scale-95">
+                <span className="text-lg">📍</span>
+                <span className="text-[10px] font-bold text-blue-600">구글맵</span>
+              </a>
+            </div>
+
+            {/* 24시간 응급 병원 별도 버튼 */}
+            <a href={naverEmergencyUrl(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-brand-danger text-white rounded-xl py-2.5 text-xs font-bold hover:bg-red-600 active:scale-95 transition-all">
+              <AlertTriangle size={13} /> 24시간 응급 동물병원 찾기
+            </a>
+          </div>
+        )}
+      </div>
 
       {/* 응급 배너 */}
       <div className="bg-brand-danger/10 border border-brand-danger/30 rounded-2xl p-4 flex gap-3">
         <AlertTriangle className="text-brand-danger flex-shrink-0 mt-0.5" size={20} />
         <div>
           <p className="text-sm font-bold text-brand-danger">응급 증상이 있나요?</p>
-          <p className="text-xs text-gray-600 mt-0.5">경련·의식 저하·호흡 곤란은 즉시 병원으로! 자가 진단을 미루지 마세요.</p>
+          <p className="text-xs text-gray-600 mt-0.5">경련·의식 저하·호흡 곤란은 즉시 병원으로!</p>
           <div className="flex gap-2 mt-2 flex-wrap">
-            <a
-              href="tel:02-1234-5678"
-              className="text-xs font-semibold text-white bg-brand-danger rounded-full px-3 py-1"
-            >
+            <a href="tel:02-1234-5678"
+              className="text-xs font-semibold text-white bg-brand-danger rounded-full px-3 py-1">
               📞 즉시 전화연결
             </a>
-            <a
-              href={naverMapUrl('24시간 동물병원', '서울')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-semibold text-brand-danger border border-brand-danger/40 rounded-full px-3 py-1 hover:bg-brand-danger hover:text-white transition-colors"
-            >
-              🗺️ 네이버 지도에서 찾기
+            <a href={coords ? naverEmergencyUrl(coords.lat, coords.lng) : naverMapUrl('24시간 동물병원', '서울')}
+              target="_blank" rel="noopener noreferrer"
+              className="text-xs font-semibold text-brand-danger border border-brand-danger/40 rounded-full px-3 py-1">
+              {coords ? '📍 내 위치 기준 검색' : '🗺️ 지도에서 찾기'}
             </a>
           </div>
         </div>
@@ -283,10 +401,19 @@ export default function HospitalTab() {
       {/* 병원 목록 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-gray-500">내 주변 동물병원</p>
-          <span className="flex items-center gap-0.5 text-[10px] text-brand-mint font-semibold">
-            <MapPin size={10} /> 위치 기반
-          </span>
+          <p className="text-xs font-semibold text-gray-500">
+            {coords ? '📍 내 위치 기준 참고 목록' : '참고 병원 목록 (GPS 연동 권장)'}
+          </p>
+          {!coords && (
+            <button onClick={getLocation} className="flex items-center gap-0.5 text-[10px] text-blue-500 font-semibold">
+              <LocateFixed size={10} /> 위치 켜기
+            </button>
+          )}
+          {coords && (
+            <span className="flex items-center gap-0.5 text-[10px] text-green-600 font-semibold">
+              <MapPin size={10} /> GPS 연결됨
+            </span>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -323,7 +450,7 @@ export default function HospitalTab() {
                 </a>
               </div>
 
-              {/* 네이버 지도 버튼 */}
+              {/* 지도 버튼 */}
               <div className="flex gap-2 pt-1 border-t border-gray-50">
                 <a
                   href={naverMapUrl(h.name, h.addr)}
@@ -331,22 +458,19 @@ export default function HospitalTab() {
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#03C75A] border border-[#03C75A]/30 bg-[#03C75A]/5 rounded-xl py-2 hover:bg-[#03C75A]/10 transition-colors"
                 >
-                  <img
-                    src="https://ssl.pstatic.net/static/maps/mantle/map-pin/2x/m.png"
-                    alt="naver"
-                    className="w-3.5 h-3.5 object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                  네이버 지도 보기
+                  <ExternalLink size={11} />
+                  네이버 지도
                 </a>
                 <a
-                  href={naverDirectionUrl(h.name, h.addr)}
+                  href={coords
+                    ? `https://map.kakao.com/?q=${encodeURIComponent(h.name)}&from=roughmap&srcid=&confirmid=&service=`
+                    : naverDirectionUrl(h.name, h.addr)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 rounded-xl py-2 hover:bg-blue-100 transition-colors"
                 >
                   <Navigation size={12} />
-                  길찾기
+                  {coords ? '카카오 길찾기' : '길찾기'}
                 </a>
               </div>
             </div>
