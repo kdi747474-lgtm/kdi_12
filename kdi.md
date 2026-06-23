@@ -26,6 +26,8 @@
 | 교육 — 캡 스쿨 (EducationTab) | ✅ 완료 | 80% |
 | 병원 찾기 (HospitalTab) | ✅ 완료 | 85% |
 | 생활 도구 미니툴 (MiniTools) — 툴 4종 | ✅ 완료 | 95% |
+| 피드백 위젯 (FeedbackWidget) — 이모지·NPS·투표 | ✅ 완료 | 100% |
+| 고양이 성향 테스트 (CatQuiz) — 5문항 맞춤 추천 | ✅ 완료 | 100% |
 | GPT 실제 연동 | 🔧 미완 | 10% |
 | 실제 결제 연동 | 📋 예정 | 0% |
 | GPS 병원 검색 | 📋 예정 | 0% |
@@ -65,8 +67,10 @@ kdi_12/
             ├── CommerceTab.tsx  ← 국내/해외 쇼핑 + 공동구매
             ├── CommunityTab.tsx ← 게시판 / 동네 소식통
             ├── EducationTab.tsx ← 캡 스쿨 강의
-            ├── HospitalTab.tsx  ← 주변 동물병원
-            └── MiniTools.tsx   ← 생활 도구 3종 (나이·사료량·위험음식)
+            ├── HospitalTab.tsx    ← 주변 동물병원
+            ├── MiniTools.tsx      ← 생활 도구 4종 (나이·사료량·위험음식·관부가세)
+            ├── FeedbackWidget.tsx ← 플로팅 피드백 위젯 (이모지반응·기능투표·NPS)
+            └── CatQuiz.tsx        ← 고양이 성향 테스트 (5문항 맞춤 추천)
 ```
 
 ---
@@ -244,6 +248,8 @@ npx vercel --prod --scope kdi747474-1706s-projects
 - [x] 공동구매 담기 모달 (수량 선택 + 신청 완료)
 - [x] 관부가세 자동 계산기 (USD → KRW, 면세 판별)
 - [x] 직구/쇼핑 챗봇 키워드 확장
+- [x] 플로팅 피드백 위젯 (이모지 반응·기능 투표·NPS·한줄 의견 → localStorage 저장)
+- [x] 고양이 성향 테스트 (5문항 → 맞춤 집사 타입 분류 + 추천 탭 이동)
 - [ ] OpenAI API 연결 (VITE_OPENAI_API_KEY → GPT 챗봇 실제 답변)
 - [ ] 텔레그램 봇 연동 (FastAPI → python-telegram-bot)
 - [ ] GPS 기반 실제 병원 검색 (카카오맵 API)

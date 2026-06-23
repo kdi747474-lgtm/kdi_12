@@ -1,6 +1,15 @@
-feat: add duty calculator, cart modal, extended chatbot keywords
+feat: add feedback widget, cat personality quiz (market research)
 
-- MiniTools: add customs duty calculator (4th tool, USD->KRW, tax-free check)
-- CommerceTab: implement group-buy cart modal with qty selector + success screen
-- chatbot.ts: extend commerce keywords (direct purchase, overseas shopping sites)
-- kdi.md: update progress table, test cases, roadmap checklist
+- FeedbackWidget: floating button with 4-step survey
+  - Step1: emoji reaction per tab (5 options + live result chart)
+  - Step2: feature request voting (8 candidates, max 3 picks)
+  - Step3: NPS score 0-10 with color coding
+  - Step4: free text comment (200 chars)
+  - All data persisted to localStorage, shown in completion screen
+- CatQuiz: 5-question cat personality test
+  - Classifies user into 4 types (health/beginner/shopper/allround)
+  - Shows personalized tips, product recommendations
+  - One-tap navigation to recommended tab
+- App.tsx: FeedbackWidget registered globally on all tabs
+- ChatTab: CatQuiz embedded below MiniTools
+- kdi.md: updated module list, folder structure, roadmap

@@ -3,6 +3,7 @@ import { Send, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import type { ChatMessage, TabId } from '../types'
 import { askAI } from '../lib/chatbot'
 import MiniTools from './MiniTools'
+import CatQuiz from './CatQuiz'
 
 // 카테고리별 실생활 질문
 const QUICK_CATEGORIES = [
@@ -97,6 +98,11 @@ export default function ChatTab({ messages, setMessages, onNavigate }: Props) {
 
         {/* 미니 도구 */}
         <MiniTools />
+
+        {/* 고양이 성향 테스트 */}
+        <div className="px-4 pb-2">
+          <CatQuiz onNavigate={onNavigate} />
+        </div>
 
         <div className="px-4 py-2 space-y-4">
           {messages.map((m) => (

@@ -6,6 +6,7 @@ import CommerceTab from './components/CommerceTab'
 import CommunityTab from './components/CommunityTab'
 import EducationTab from './components/EducationTab'
 import HospitalTab from './components/HospitalTab'
+import FeedbackWidget from './components/FeedbackWidget'
 
 const TABS: { id: TabId; label: string; Icon: React.ElementType; activeColor: string; dotColor: string }[] = [
   { id: 'chat',      label: 'AI 상담', Icon: MessageCircle, activeColor: 'text-brand-pink',   dotColor: 'bg-brand-pink' },
@@ -83,6 +84,9 @@ export default function App() {
           {activeTab === 'education' && <EducationTab />}
           {activeTab === 'hospital'  && <HospitalTab />}
         </main>
+
+        {/* 플로팅 피드백 버튼 */}
+        <FeedbackWidget activeTab={activeTab} />
 
         {/* 하단 탭 바 */}
         <nav className="flex-shrink-0 bg-white border-t border-gray-100 flex">
