@@ -267,6 +267,7 @@ npx vercel --prod --scope kdi747474-1706s-projects
 - [x] AI 챗봇 FAQ 완전 재작성 (병원찾기·응급·구토·설사·중성화 등 12종 상세 답변)
 - [x] 행정안전부 공공데이터 동물병원 API 연동 (FastAPI 프록시 + 전국 17개 시도 검색)
 - [x] 챗봇 병원 찾기 직접 안내 (GPS 기능·지도 앱·응급 전화 안내로 "모른다" 대신 실답변)
+- [x] 날씨 API 연동 (Open-Meteo 무료·GPS 기반 3일 예보 + 기온별 냥이 옷차림 + 병원·학교·산책 준비물 체크리스트)
 - [ ] OpenAI API 연결 (VITE_OPENAI_API_KEY → GPT 챗봇 실제 답변)
 - [ ] 텔레그램 봇 연동 (FastAPI → python-telegram-bot)
 - [ ] 공공데이터포털 API 키 발급 → 전국 실시간 병원 목록 연동

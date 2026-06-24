@@ -4,6 +4,7 @@ import type { ChatMessage, TabId } from '../types'
 import { askAI } from '../lib/chatbot'
 import MiniTools from './MiniTools'
 import CatQuiz from './CatQuiz'
+import WeatherWidget from './WeatherWidget'
 
 // 카테고리별 실생활 질문
 const QUICK_CATEGORIES = [
@@ -22,6 +23,10 @@ const QUICK_CATEGORIES = [
   {
     label: '📋 정보',
     questions: ['중성화 언제 해야 해요', '예방접종 일정 알려줘', '털갈이 시즌 관리법', '스케일링 주기', '노령묘 관리법', '아기 고양이 주의사항'],
+  },
+  {
+    label: '🌤️ 외출',
+    questions: ['병원 갈 때 준비물', '고양이 학교 준비물', '추울 때 옷 입혀야 해요', '더울 때 외출 주의사항', '비 오는 날 외출', '이동장 고르는 법'],
   },
 ]
 
@@ -95,6 +100,11 @@ export default function ChatTab({ messages, setMessages, onNavigate }: Props) {
 
       {/* 메시지 영역 */}
       <div className="flex-1 overflow-y-auto">
+
+        {/* 날씨 & 외출 준비 */}
+        <div className="pt-3">
+          <WeatherWidget />
+        </div>
 
         {/* 미니 도구 */}
         <MiniTools />
