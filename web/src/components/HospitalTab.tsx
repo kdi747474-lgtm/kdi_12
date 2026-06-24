@@ -1,5 +1,24 @@
 import { useState, useCallback } from 'react'
-import { Phone, Clock, MapPin, AlertTriangle, Navigation, Syringe, Plus, Trash2, Bell, Loader2, LocateFixed, ExternalLink } from 'lucide-react'
+import { Phone, Clock, MapPin, AlertTriangle, Navigation, Syringe, Plus, Trash2, Bell, Loader2, LocateFixed, ExternalLink, Search, RefreshCw } from 'lucide-react'
+
+// ── 공공데이터 병원 API ────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+
+interface ApiHospital {
+  name: string
+  address: string
+  phone: string
+  status: string
+  lat: string
+  lng: string
+}
+
+const SIDO_LIST = [
+  '서울특별시', '경기도', '인천광역시', '부산광역시', '대구광역시',
+  '대전광역시', '광주광역시', '울산광역시', '세종특별자치시',
+  '강원특별자치도', '충청북도', '충청남도', '전북특별자치도',
+  '전라남도', '경상북도', '경상남도', '제주특별자치도',
+]
 
 // ── 예방접종 일정 관리 ─────────────────────────────────────────
 const VAC_KEY = 'supercap_vaccinations'
@@ -233,6 +252,153 @@ function naverDirectionUrl(name: string, addr: string) {
   return `https://map.naver.com/v5/directions/-/-/${dest},${destAddr},,/car`
 }
 
+// ── 공공 병원 검색 패널 ────────────────────────────────────────
+function PublicHospitalSearch() {
+  const [sido, setSido] = useState('서울특별시')
+  const [hospitals, setHospitals] = useState<ApiHospital[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [searched, setSearched] = useState(false)
+
+  async function fetchHospitals() {
+    setLoading(true)
+    setError('')
+    setSearched(true)
+    try {
+      const res = await fetch(`${API_BASE}/hospitals?sido=${encodeURIComponent(sido)}&size=20`, {
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!res.ok) throw new Error(`서버 오류 ${res.status}`)
+      const data: ApiHospital[] = await res.json()
+      setHospitals(data)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '알 수 없는 오류'
+      setError(msg.includes('timeout') || msg.includes('Failed to fetch')
+        ? '백엔드 서버가 실행 중이지 않아요. (uvicorn main:app 실행 필요)'
+        : msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 전화번호 정리
+  function formatPhone(p: string) {
+    if (!p) return ''
+    return p.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, '$1-$2-$3')
+  }
+
+  function kakaoSearch(h: ApiHospital) {
+    const q = encodeURIComponent(h.name + ' ' + h.address)
+    if (h.lat && h.lng) {
+      return `https://map.kakao.com/?q=${encodeURIComponent(h.name)}`
+    }
+    return `https://map.kakao.com/?q=${q}`
+  }
+
+  function naverSearch(h: ApiHospital) {
+    const q = encodeURIComponent(h.name + ' ' + h.address)
+    return `https://map.naver.com/v5/search/${q}`
+  }
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-r from-teal-50 to-blue-50 px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-2 mb-2">
+          <Search size={16} className="text-teal-600" />
+          <p className="text-sm font-bold text-brand-dark">전국 동물병원 검색</p>
+          <span className="text-[10px] bg-teal-100 text-teal-700 font-semibold px-2 py-0.5 rounded-full">공공데이터</span>
+        </div>
+        <div className="flex gap-2">
+          <select
+            value={sido}
+            onChange={(e) => setSido(e.target.value)}
+            className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 bg-white outline-none focus:border-teal-400"
+          >
+            {SIDO_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button
+            onClick={fetchHospitals}
+            disabled={loading}
+            className="flex items-center gap-1.5 bg-teal-500 text-white rounded-xl px-4 py-2 text-xs font-semibold hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-60"
+          >
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+            {loading ? '검색 중' : '검색'}
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 py-3">
+        {!searched && (
+          <p className="text-xs text-gray-400 text-center py-4">
+            지역을 선택하고 검색을 누르면<br />공공데이터 기반 동물병원 목록이 나와요 🏥
+          </p>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-xs text-red-600">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {!loading && searched && !error && hospitals.length === 0 && (
+          <p className="text-xs text-gray-400 text-center py-4">검색 결과가 없어요.</p>
+        )}
+
+        <div className="space-y-2.5 max-h-80 overflow-y-auto">
+          {hospitals.map((h, i) => (
+            <div key={i} className="border border-gray-100 rounded-xl p-3">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      h.status.includes('24') ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'
+                    }`}>
+                      {h.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-brand-dark leading-snug">{h.name}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 flex items-start gap-1">
+                    <MapPin size={9} className="text-gray-300 mt-0.5 flex-shrink-0" />
+                    {h.address || '주소 미등록'}
+                  </p>
+                </div>
+                {h.phone && (
+                  <a href={`tel:${h.phone}`}
+                    className="flex items-center gap-1 text-xs bg-brand-pink text-white rounded-full px-2.5 py-1.5 hover:bg-pink-500 transition-colors shrink-0">
+                    <Phone size={10} /> 전화
+                  </a>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <a href={naverSearch(h)} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold text-[#03C75A] border border-[#03C75A]/30 bg-[#03C75A]/5 rounded-xl py-1.5 hover:bg-[#03C75A]/10 transition-colors">
+                  <ExternalLink size={9} /> 네이버
+                </a>
+                <a href={kakaoSearch(h)} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold text-yellow-700 border border-yellow-200 bg-yellow-50 rounded-xl py-1.5 hover:bg-yellow-100 transition-colors">
+                  <ExternalLink size={9} /> 카카오
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {hospitals.length > 0 && (
+          <div className="mt-2 flex items-center justify-between">
+            <p className="text-[10px] text-gray-400">
+              행정안전부 공공데이터 기반 · {hospitals.length}건
+            </p>
+            <button onClick={fetchHospitals}
+              className="flex items-center gap-1 text-[10px] text-teal-500 font-semibold hover:underline">
+              <RefreshCw size={9} /> 새로고침
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function HospitalTab() {
   const [showVac, setShowVac] = useState(false)
   const [gpsState, setGpsState] = useState<GpsState>('idle')
@@ -382,6 +548,9 @@ export default function HospitalTab() {
           </div>
         )}
       </div>
+
+      {/* 공공데이터 병원 검색 */}
+      <PublicHospitalSearch />
 
       {/* 증상 빠른 안내 */}
       <div>
