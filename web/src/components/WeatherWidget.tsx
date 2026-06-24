@@ -183,15 +183,16 @@ export default function WeatherWidget() {
           }
 
           const daily = wData.daily
-          const days: DayWeather[] = daily.time.map((dateStr: string, i: number) => {
+          if (!daily?.time) throw new Error('날씨 응답 형식이 올바르지 않아요')
+          const days: DayWeather[] = (daily.time as string[]).map((dateStr: string, i: number) => {
             const dayNames = ['오늘', '내일', '모레']
             return {
               date: dateStr,
               label: dayNames[i] ?? dateStr,
-              code: daily.weathercode[i],
-              tempMax: Math.round(daily.temperature_2m_max[i]),
-              tempMin: Math.round(daily.temperature_2m_min[i]),
-              precipProb: daily.precipitation_probability_max[i] ?? 0,
+              code: daily.weathercode?.[i] ?? 0,
+              tempMax: Math.round(daily.temperature_2m_max?.[i] ?? 20),
+              tempMin: Math.round(daily.temperature_2m_min?.[i] ?? 15),
+              precipProb: daily.precipitation_probability_max?.[i] ?? 0,
             }
           })
 

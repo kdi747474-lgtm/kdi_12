@@ -3,6 +3,7 @@ import { ShoppingCart, Clock, Flame, ExternalLink, X, Users, CheckCircle } from 
 
 // ── 공동구매 인원 현황 (localStorage) ─────────────────────────
 const GROUP_KEY = 'supercap_group_counts'
+const JOIN_KEY  = 'supercap_group_joined'   // 내가 신청한 상품 기록
 const BASE_COUNTS: Record<number, number> = { 1: 47, 2: 23, 3: 61, 4: 15, 5: 38, 6: 82 }
 const TARGET_COUNTS: Record<number, number> = { 1: 100, 2: 50, 3: 100, 4: 30, 5: 80, 6: 100 }
 
@@ -10,11 +11,27 @@ function loadCounts(): Record<number, number> {
   try { return JSON.parse(localStorage.getItem(GROUP_KEY) ?? '{}') } catch { return {} }
 }
 
+function loadJoined(): Record<number, { qty: number; ts: string }> {
+  try { return JSON.parse(localStorage.getItem(JOIN_KEY) ?? '{}') } catch { return {} }
+}
+
+function saveJoin(productId: number, qty: number) {
+  const prev = loadJoined()
+  prev[productId] = { qty, ts: new Date().toISOString() }
+  localStorage.setItem(JOIN_KEY, JSON.stringify(prev))
+  // 인원수도 +1 저장
+  const counts = loadCounts()
+  counts[productId] = (counts[productId] ?? 0) + 1
+  localStorage.setItem(GROUP_KEY, JSON.stringify(counts))
+}
+
 type Product = typeof PRODUCTS[number]
 
 function CartModal({ product, onClose, participantCount }: { product: Product; onClose: () => void; participantCount: number }) {
   const [qty, setQty] = useState(1)
   const [done, setDone] = useState(false)
+  const joined = loadJoined()
+  const alreadyJoined = !!joined[product.id]
   const unitPrice = parseInt(product.price.replace(',', ''), 10)
   const total = (unitPrice * qty).toLocaleString()
 
@@ -75,13 +92,19 @@ function CartModal({ product, onClose, participantCount }: { product: Product; o
           <p className="text-lg font-bold text-brand-dark">{total}원</p>
         </div>
 
-        <button
-          onClick={() => setDone(true)}
-          className="w-full bg-brand-pink text-white rounded-2xl py-3 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-pink-500 transition-colors"
-        >
-          <ShoppingCart size={16} />
-          공구 신청하기
-        </button>
+        {alreadyJoined ? (
+          <div className="w-full bg-gray-100 text-gray-500 rounded-2xl py-3 text-sm text-center font-semibold">
+            ✅ 이미 신청하셨어요 ({joined[product.id].qty}개)
+          </div>
+        ) : (
+          <button
+            onClick={() => { saveJoin(product.id, qty); setDone(true) }}
+            className="w-full bg-brand-pink text-white rounded-2xl py-3 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-pink-500 transition-colors"
+          >
+            <ShoppingCart size={16} />
+            공구 신청하기
+          </button>
+        )}
         <p className="text-[10px] text-gray-400 text-center mt-2">결제는 공구 마감 후 진행됩니다</p>
       </div>
     </div>

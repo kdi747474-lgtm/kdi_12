@@ -1,16 +1,6 @@
-feat: GPS hospital search, real cat product recommendations
+﻿feat: AI chatbot location detection + map links
 
-- HospitalTab: real GPS location-based hospital finder
-  - navigator.geolocation with timeout/cache settings
-  - 3 map apps: Naver Map, Kakao Map, Google Maps (with real lat/lng)
-  - Dedicated 24h emergency hospital search button
-  - GPS states: idle/loading/success/denied/error with proper UX
-  - Emergency banner dynamically uses GPS coords when available
-  - Hospital card map buttons also use GPS context
-- CommerceTab: real cat product recommendation list
-  - 5 categories: food, snack, litter, health, toy
-  - 18 real products with actual brand names, prices, purchase links
-  - Brands: Royal Canin, Orijen, Hills, iNaba CIAO, Greenday, Chewy etc.
-  - Links to Petfriends, Coupang, iHerb, Chewy, official sites
-  - Category tab filter UI
-- kdi.md: updated progress table and roadmap
+- types.ts: MapLink, ask_location 타입 추가
+- chatbot.ts: 전국 50+ 지역명 사전 추가, 지역 감지 시 네이버·카카오·구글·24시 링크 자동 생성
+  지역 없으면 어느 지역이세요? 재질문, GPT 응답에도 지역 감지 후 링크 주입
+- ChatTab.tsx: map_links 버튼 렌더링 (색상별 스타일)

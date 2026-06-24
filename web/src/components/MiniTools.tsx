@@ -110,30 +110,64 @@ function FoodCalc() {
 }
 
 // ── 위험 음식 체크 ─────────────────────────────────────────────
-const DANGER_FOODS: { keywords: string[]; level: 'danger' | 'caution'; msg: string }[] = [
-  { keywords: ['양파', '파', '마늘', '부추', '대파', '쪽파'], level: 'danger', msg: '🚨 절대 금지! 적혈구를 파괴해 빈혈을 유발합니다.' },
-  { keywords: ['초콜릿', '코코아', '카카오'], level: 'danger', msg: '🚨 절대 금지! 테오브로민 성분이 심장·신경계에 치명적입니다.' },
-  { keywords: ['포도', '건포도'], level: 'danger', msg: '🚨 절대 금지! 신부전을 유발할 수 있어요.' },
-  { keywords: ['자일리톨', '껌', '사탕'], level: 'danger', msg: '🚨 절대 금지! 저혈당·간 손상을 유발합니다.' },
-  { keywords: ['알코올', '술', '맥주', '소주'], level: 'danger', msg: '🚨 절대 금지! 극소량도 치명적입니다.' },
-  { keywords: ['날달걀', '날계란'], level: 'caution', msg: '⚠️ 주의! 살모넬라 위험. 완전히 익혀서 소량만 가능해요.' },
-  { keywords: ['우유', '치즈', '유제품'], level: 'caution', msg: '⚠️ 주의! 유당불내증으로 설사할 수 있어요. 고양이 전용 우유는 OK.' },
-  { keywords: ['날생선', '참치', '날 연어'], level: 'caution', msg: '⚠️ 주의! 날것은 기생충 위험. 익힌 생선은 소량 OK.' },
-  { keywords: ['카페인', '커피', '녹차', '홍차'], level: 'caution', msg: '⚠️ 주의! 심장·신경계에 부담을 줄 수 있어요.' },
-  { keywords: ['닭', '참치캔', '연어', '고등어', '소고기'], level: 'danger', msg: '✅ 안전해요! 익힌 살코기는 훌륭한 단백질 간식이에요. (양념 없이)' },
-]
-DANGER_FOODS[DANGER_FOODS.length - 1].level = 'caution' as 'caution'
+// 순서 중요: 위험(danger) → 주의(caution) → 안전(safe) 순으로 배치
+// 부분 문자열 오탐 방지를 위해 구체적인 키워드를 먼저 배치
 
-const SAFE_FOODS = ['닭', '참치캔', '연어', '고등어', '소고기', '호박', '당근', '브로콜리', '블루베리']
+const DANGER_FOODS: { keywords: string[]; level: 'danger' | 'caution' | 'safe'; msg: string }[] = [
+  // ── 절대 금지 (danger) ──
+  { keywords: ['양파', '대파', '쪽파', '파', '마늘', '부추'], level: 'danger',
+    msg: '🚨 절대 금지! 파/마늘류는 적혈구를 파괴해 빈혈을 유발합니다.' },
+  { keywords: ['초콜릿', '코코아', '카카오'], level: 'danger',
+    msg: '🚨 절대 금지! 테오브로민이 심장·신경계에 치명적입니다.' },
+  { keywords: ['포도', '건포도', '청포도', '적포도'], level: 'danger',
+    msg: '🚨 절대 금지! 소량도 신부전을 유발할 수 있어요.' },
+  { keywords: ['자일리톨'], level: 'danger',
+    msg: '🚨 절대 금지! 저혈당·간 손상을 유발합니다.' },
+  { keywords: ['알코올', '맥주', '소주', '술'], level: 'danger',
+    msg: '🚨 절대 금지! 극소량도 치명적입니다.' },
+  { keywords: ['아보카도'], level: 'danger',
+    msg: '🚨 절대 금지! 퍼신(persin) 성분이 구토·호흡곤란을 유발합니다.' },
+  { keywords: ['날달걀', '날계란', '생달걀', '생계란'], level: 'caution',
+    msg: '⚠️ 주의! 살모넬라 위험. 완전히 익혀서 소량만 가능해요.' },
+  // ── 주의 (caution) ──
+  { keywords: ['우유', '유제품'], level: 'caution',
+    msg: '⚠️ 주의! 유당불내증으로 설사할 수 있어요. 고양이 전용 우유는 OK.' },
+  { keywords: ['날생선', '생선회', '날연어', '생연어'], level: 'caution',
+    msg: '⚠️ 주의! 날생선은 기생충·비타민B1 분해 효소 위험. 익힌 생선은 소량 OK.' },
+  { keywords: ['참치캔'], level: 'caution',
+    msg: '⚠️ 주의! 참치캔(사람용)은 염분·수은 과다. 고양이 전용 참치 간식 사용 권장.' },
+  { keywords: ['카페인', '커피', '녹차', '홍차'], level: 'caution',
+    msg: '⚠️ 주의! 심장·신경계에 부담을 줄 수 있어요.' },
+  { keywords: ['치즈'], level: 'caution',
+    msg: '⚠️ 주의! 유당 함량 높음. 소량만, 민감한 고양이는 피하세요.' },
+  // ── 안전 (safe) — 구체적 키워드로 오탐 방지 ──
+  { keywords: ['닭가슴살', '익힌 닭', '삶은 닭', '닭고기'], level: 'safe',
+    msg: '✅ 안전해요! 익힌 닭가슴살은 훌륭한 단백질 간식이에요. (양념 없이)' },
+  { keywords: ['연어', '고등어', '익힌 생선'], level: 'safe',
+    msg: '✅ 안전해요! 익힌 생선은 소량 급여 가능해요. (양념·소금 없이)' },
+  { keywords: ['소고기', '돼지고기'], level: 'safe',
+    msg: '✅ 안전해요! 완전히 익힌 살코기는 소량 OK. 기름기 많은 부위는 피하세요.' },
+  { keywords: ['호박', '단호박'], level: 'safe',
+    msg: '✅ 안전해요! 익힌 호박은 소화에 좋고 변비 개선에 도움이 돼요.' },
+  { keywords: ['당근'], level: 'safe',
+    msg: '✅ 안전해요! 익힌 당근 소량은 괜찮아요.' },
+  { keywords: ['블루베리'], level: 'safe',
+    msg: '✅ 안전해요! 항산화 간식으로 소량 가능해요.' },
+]
 
 function FoodCheck() {
   const [query, setQuery] = useState('')
 
+  // 정확한 키워드 우선 매칭 (긴 키워드 먼저)
   const result = query.trim()
-    ? DANGER_FOODS.find((f) => f.keywords.some((k) => query.includes(k)))
+    ? DANGER_FOODS.find((f) =>
+        f.keywords.some((k) => query.toLowerCase().includes(k.toLowerCase()))
+      )
     : null
 
-  const isSafe = query.trim() && !result && SAFE_FOODS.some((s) => query.includes(s))
+  const isSafe = result?.level === 'safe'
+  const isDanger = result?.level === 'danger'
+  const isCaution = result?.level === 'caution'
 
   return (
     <div className="space-y-2">
@@ -144,21 +178,24 @@ function FoodCheck() {
         onChange={(e) => setQuery(e.target.value)}
         className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-amber"
       />
-      {result && (
-        <div className={`rounded-xl p-3 text-sm ${
-          result.level === 'danger' ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-        }`}>
+      {result && isSafe && (
+        <div className="rounded-xl p-3 text-sm bg-green-50 border border-green-200 text-green-700">
           {result.msg}
         </div>
       )}
-      {isSafe && (
-        <div className="rounded-xl p-3 text-sm bg-green-50 border border-green-200 text-green-700">
-          ✅ 안전해요! 익혀서 소량씩 주면 좋은 간식이에요.
+      {result && isCaution && (
+        <div className="rounded-xl p-3 text-sm bg-yellow-50 border border-yellow-200 text-yellow-700">
+          {result.msg}
         </div>
       )}
-      {query.trim() && !result && !isSafe && (
+      {result && isDanger && (
+        <div className="rounded-xl p-3 text-sm bg-red-50 border border-red-200 text-red-700">
+          {result.msg}
+        </div>
+      )}
+      {query.trim() && !result && (
         <div className="rounded-xl p-3 text-sm bg-gray-50 border border-gray-200 text-gray-500">
-          ℹ️ 데이터가 없어요. 확실하지 않은 음식은 수의사에게 확인해 주세요.
+          ℹ️ 데이터가 없어요. 확실하지 않은 음식은 수의사에게 먼저 확인해 주세요.
         </div>
       )}
     </div>

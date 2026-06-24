@@ -62,13 +62,16 @@ export default function ChatTab({ messages, setMessages, onNavigate }: Props) {
       text: text.trim(),
       timestamp: new Date(),
     }
+
+    // history를 setMessages 콜백 밖에서 구성하되, 현재 메시지도 포함
+    const history = [
+      ...messages.slice(-7),
+      userMsg,
+    ].map((m) => ({ role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant', content: m.text }))
+
     setMessages((prev) => [...prev, userMsg])
     setInput('')
     setLoading(true)
-
-    const history = messages
-      .slice(-8)
-      .map((m) => ({ role: (m.role === 'bot' ? 'assistant' : 'user') as 'user' | 'assistant', content: m.text }))
 
     try {
       const { reply, action } = await askAI(text, history)

@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { X, MessageSquare, ThumbsUp, BarChart2, ChevronRight, CheckCircle } from 'lucide-react'
 import type { TabId } from '../types'
 
-// ── 기능 투표 후보 ─────────────────────────────────────────────
+// ── 기능 투표 후보 (미구현 기능만) ─────────────────────────────
 const FEATURE_VOTES = [
-  { id: 'gps',      label: '📍 GPS 실시간 병원 검색',         desc: '내 위치 기반 병원 찾기' },
-  { id: 'gpt',      label: '🤖 GPT 챗봇 연동',               desc: '더 자연스러운 AI 상담' },
-  { id: 'weight',   label: '⚖️ 체중 그래프 기록',             desc: '날짜별 체중 변화 차트' },
-  { id: 'kakao',    label: '🔐 카카오 로그인',                desc: '소셜 로그인 + 내 프로필' },
-  { id: 'push',     label: '🔔 예방접종 알림',                desc: '맞춤 접종 일정 푸시 알림' },
-  { id: 'compare',  label: '💰 사료 가격 비교',               desc: '국내/해외 실시간 비교' },
+  { id: 'kakao',    label: '🔐 카카오 로그인',                desc: '소셜 로그인 + 내 기록 동기화' },
+  { id: 'push',     label: '🔔 예방접종 푸시 알림',           desc: '앱 알림으로 접종일 D-day 알림' },
+  { id: 'compare',  label: '💰 사료 가격 실시간 비교',        desc: '국내/해외 쇼핑몰 동시 비교' },
   { id: 'sitter',   label: '🏠 캣시터 매칭',                  desc: '동네 캣시터 연결 서비스' },
-  { id: 'camera',   label: '📷 고양이 사진 일기',             desc: '날짜별 사진 앨범 기록' },
+  { id: 'camera',   label: '📷 고양이 사진 일기',             desc: '날짜별 성장 사진 앨범 기록' },
+  { id: 'health',   label: '🩺 건강 기록 리포트',             desc: '병원 기록·검사 결과 관리' },
+  { id: 'shop',     label: '🛒 정기 배송 구독',               desc: '사료·모래 정기 배송 알림' },
+  { id: 'community_chat', label: '💬 커뮤니티 실시간 채팅',  desc: '지역 집사들과 실시간 대화' },
 ]
 
 // ── 탭별 이모지 반응 ───────────────────────────────────────────
@@ -287,12 +287,12 @@ export default function FeedbackWidget({ activeTab }: Props) {
                   알러뷰 수퍼캡을 주변 집사님께 추천하실 건가요?
                 </p>
                 <p className="text-xs text-gray-400 mb-4">0(전혀 안 할 것) ~ 10(반드시 추천)</p>
-                <div className="grid grid-cols-11 gap-1 mb-3">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {Array.from({ length: 11 }, (_, i) => (
                     <button
                       key={i}
                       onClick={() => submitNps(i)}
-                      className={`aspect-square rounded-xl text-xs font-bold transition-all active:scale-90 ${
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all active:scale-90 ${
                         npsScore === i
                           ? 'bg-brand-pink text-white scale-110 shadow-md'
                           : i >= 9 ? 'bg-green-50 text-green-700 hover:bg-green-100'

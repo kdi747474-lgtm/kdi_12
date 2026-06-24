@@ -237,7 +237,38 @@ const HOSPITALS = [
   },
 ]
 
-const SYMPTOMS = ['구토·설사', '식욕부진', '혈뇨·배변 문제', '기침·호흡 곤란', '다리 절음', '눈·코 분비물']
+const SYMPTOMS: { label: string; guide: string; urgent: boolean }[] = [
+  {
+    label: '구토·설사',
+    urgent: true,
+    guide: '하루 3회 이상·혈액 섞임이면 즉시 병원! 1~2회라면 헤어볼 확인, 과식 여부, 이물질 접촉 여부를 먼저 확인하세요.',
+  },
+  {
+    label: '식욕부진',
+    urgent: false,
+    guide: '24시간 이상 안 먹으면 반드시 병원 방문! 고양이는 48시간 이상 금식 시 지방간 위험이 있어요. 스트레스·환경 변화도 원인입니다.',
+  },
+  {
+    label: '혈뇨·배변 문제',
+    urgent: true,
+    guide: '24시간 소변 못 봄·혈뇨는 즉시 병원! (수컷 방광 막힘 생명 위험) 화장실 모래 종류·청결도·개수 점검도 필요해요.',
+  },
+  {
+    label: '기침·호흡 곤란',
+    urgent: true,
+    guide: '입 벌려 헐떡이거나 잇몸이 파란색이면 응급! 연속 재채기+콧물은 고양이 감기 의심 → 당일 내 병원 방문 권장.',
+  },
+  {
+    label: '다리 절음',
+    urgent: false,
+    guide: '갑자기 한쪽 다리를 들거나 뒷다리 마비면 즉시 병원! (대동맥혈전증 의심) 가벼운 절뚝거림은 24시간 관찰 후 판단.',
+  },
+  {
+    label: '눈·코 분비물',
+    urgent: false,
+    guide: '노란/녹색 눈곱+콧물+기침 조합이면 고양이 감기 의심. 생리식염수로 닦아주고 증상 지속 시 병원 방문하세요.',
+  },
+]
 
 // 네이버 지도 URL 생성
 function naverMapUrl(name: string, addr: string) {
@@ -403,6 +434,7 @@ export default function HospitalTab() {
   const [showVac, setShowVac] = useState(false)
   const [gpsState, setGpsState] = useState<GpsState>('idle')
   const [coords, setCoords]     = useState<Coords | null>(null)
+  const [activeSymptom, setActiveSymptom] = useState<string | null>(null)
 
   const getLocation = useCallback(() => {
     if (!navigator.geolocation) { setGpsState('error'); return }
@@ -512,9 +544,9 @@ export default function HospitalTab() {
           <p className="text-sm font-bold text-brand-danger">응급 증상이 있나요?</p>
           <p className="text-xs text-gray-600 mt-0.5">경련·의식 저하·호흡 곤란은 즉시 병원으로!</p>
           <div className="flex gap-2 mt-2 flex-wrap">
-            <a href="tel:02-1234-5678"
+            <a href="tel:119"
               className="text-xs font-semibold text-white bg-brand-danger rounded-full px-3 py-1">
-              📞 즉시 전화연결
+              📞 119 신고
             </a>
             <a href={coords ? naverEmergencyUrl(coords.lat, coords.lng) : naverMapUrl('24시간 동물병원', '서울')}
               target="_blank" rel="noopener noreferrer"
@@ -554,17 +586,46 @@ export default function HospitalTab() {
 
       {/* 증상 빠른 안내 */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 mb-2">증상으로 빠른 안내</p>
+        <p className="text-xs font-semibold text-gray-500 mb-2">증상으로 빠른 안내 (눌러보세요!)</p>
         <div className="flex flex-wrap gap-2">
           {SYMPTOMS.map((s) => (
             <button
-              key={s}
-              className="text-xs bg-white border border-gray-200 rounded-full px-3 py-1.5 text-gray-600 hover:border-brand-danger hover:text-brand-danger transition-colors"
+              key={s.label}
+              onClick={() => setActiveSymptom(activeSymptom === s.label ? null : s.label)}
+              className={`text-xs rounded-full px-3 py-1.5 border transition-all ${
+                activeSymptom === s.label
+                  ? s.urgent
+                    ? 'bg-brand-danger text-white border-brand-danger'
+                    : 'bg-brand-mint text-white border-brand-mint'
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-brand-danger hover:text-brand-danger'
+              }`}
             >
-              {s}
+              {s.urgent ? '🚨 ' : '💡 '}{s.label}
             </button>
           ))}
         </div>
+
+        {/* 증상 안내 카드 */}
+        {activeSymptom && (() => {
+          const sym = SYMPTOMS.find((s) => s.label === activeSymptom)!
+          return (
+            <div className={`mt-3 rounded-xl p-3 border ${sym.urgent ? 'bg-red-50 border-red-200' : 'bg-teal-50 border-teal-200'}`}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-sm font-bold">{sym.urgent ? '🚨' : '💡'}</span>
+                <p className={`text-xs font-bold ${sym.urgent ? 'text-red-700' : 'text-teal-700'}`}>{sym.label}</p>
+              </div>
+              <p className="text-xs text-gray-700 leading-relaxed">{sym.guide}</p>
+              {sym.urgent && (
+                <div className="mt-2 flex gap-2">
+                  <a href="tel:119" className="text-[10px] font-bold text-white bg-red-500 rounded-full px-3 py-1">📞 119 신고</a>
+                  <a href={coords ? naverEmergencyUrl(coords.lat, coords.lng) : `https://map.naver.com/v5/search/${encodeURIComponent('24시간 동물병원')}`}
+                     target="_blank" rel="noopener noreferrer"
+                     className="text-[10px] font-bold text-red-600 border border-red-300 rounded-full px-3 py-1">🗺️ 응급 병원 찾기</a>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       {/* 병원 목록 */}
