@@ -2,6 +2,12 @@ export type TabId = 'chat' | 'commerce' | 'community' | 'education' | 'hospital'
 
 export type UrgencyLevel = 'low' | 'medium' | 'high' | 'emergency'
 
+export interface MapLink {
+  label: string
+  url: string
+  color: 'naver' | 'kakao' | 'google' | 'red' | 'default'
+}
+
 export interface SystemAction {
   intent: string
   recommended_module: TabId
@@ -10,6 +16,8 @@ export interface SystemAction {
   community_board?: string | null
   urgency_level: UrgencyLevel
   requires_hospital: boolean
+  map_links?: MapLink[]
+  ask_location?: boolean   // 지역을 물어봐야 할 때 true
 }
 
 export interface ChatMessage {

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { Send, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { Send, AlertCircle, ArrowRight, Loader2, ExternalLink, MapPin } from 'lucide-react'
 import type { ChatMessage, TabId } from '../types'
 import { askAI } from '../lib/chatbot'
 import MiniTools from './MiniTools'
@@ -136,10 +136,12 @@ export default function ChatTab({ messages, setMessages, onNavigate }: Props) {
                 </div>
 
                 {/* 액션 카드 */}
-                {m.action && m.action.recommended_module !== 'chat' && (
+                {m.action && (m.action.recommended_module !== 'chat' || m.action.map_links || m.action.ask_location) && (
                   <div className={`rounded-xl p-3 text-xs border ${
                     m.action.requires_hospital
                       ? 'bg-red-50 border-red-200'
+                      : m.action.map_links
+                      ? 'bg-blue-50 border-blue-200'
                       : 'bg-brand-mint/10 border-brand-mint/30'
                   }`}>
                     {m.action.requires_hospital && (
@@ -147,20 +149,51 @@ export default function ChatTab({ messages, setMessages, onNavigate }: Props) {
                         <AlertCircle size={13} /> 빠른 병원 방문을 권해요
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      <span className="badge bg-gray-100 text-gray-600">모듈: {m.action.recommended_module}</span>
-                      <span className={`badge ${
-                        m.action.urgency_level === 'high' || m.action.urgency_level === 'emergency'
-                          ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'
-                      }`}>긴급도: {m.action.urgency_level}</span>
-                      <span className={`badge ${m.action.requires_hospital ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
-                        병원: {m.action.requires_hospital ? 'YES' : 'NO'}
-                      </span>
-                    </div>
+
+                    {/* 지도 링크 버튼 */}
+                    {m.action.map_links && m.action.map_links.length > 0 && (
+                      <div className="mb-2">
+                        <div className="flex items-center gap-1 text-blue-700 font-bold mb-1.5">
+                          <MapPin size={11} /> 지도에서 바로 찾기
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {m.action.map_links.map((link, i) => {
+                            const colorMap: Record<string, string> = {
+                              naver:   'bg-[#03C75A] hover:bg-[#02a84a] text-white',
+                              kakao:   'bg-yellow-400 hover:bg-yellow-500 text-yellow-900',
+                              google:  'bg-blue-500 hover:bg-blue-600 text-white',
+                              red:     'bg-red-500 hover:bg-red-600 text-white',
+                              default: 'bg-gray-600 hover:bg-gray-700 text-white',
+                            }
+                            return (
+                              <a
+                                key={i}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex items-center justify-between rounded-xl px-3 py-2 font-semibold transition-colors active:scale-95 ${colorMap[link.color ?? 'default']}`}
+                              >
+                                <span>{link.label}</span>
+                                <ExternalLink size={11} className="flex-shrink-0 opacity-80" />
+                              </a>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 지역 물어보기 안내 */}
+                    {m.action.ask_location && !m.action.map_links && (
+                      <div className="flex items-center gap-1.5 text-blue-600 font-semibold mb-2">
+                        <MapPin size={11} /> 지역을 알려주시면 지도 링크를 드릴게요!
+                      </div>
+                    )}
+
+                    {/* 탭 이동 버튼 */}
                     {MODULE_LABEL[m.action.recommended_module] && (
                       <button
                         onClick={() => onNavigate(m.action!.recommended_module)}
-                        className="flex items-center gap-1 font-semibold text-brand-pink hover:underline"
+                        className="flex items-center gap-1 font-semibold text-brand-pink hover:underline mt-1"
                       >
                         {MODULE_LABEL[m.action.recommended_module]}
                         <ArrowRight size={12} />

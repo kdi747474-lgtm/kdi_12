@@ -1,4 +1,60 @@
-import type { SystemAction, TabId } from '../types'
+import type { SystemAction, TabId, MapLink } from '../types'
+
+// ── 전국 지역명 사전 ─────────────────────────────────────────
+// 메시지에서 감지된 지역명으로 지도 링크를 생성합니다
+const LOCATION_MAP: Record<string, string> = {
+  // 특별/광역시
+  '서울': '서울특별시', '서울시': '서울특별시',
+  '부산': '부산광역시', '부산시': '부산광역시',
+  '대구': '대구광역시', '대구시': '대구광역시',
+  '인천': '인천광역시', '인천시': '인천광역시',
+  '광주': '광주광역시', '광주시': '광주광역시',
+  '대전': '대전광역시', '대전시': '대전광역시',
+  '울산': '울산광역시', '울산시': '울산광역시',
+  '세종': '세종특별자치시',
+  // 경기
+  '경기': '경기도', '수원': '수원시', '성남': '성남시', '고양': '고양시',
+  '용인': '용인시', '부천': '부천시', '안산': '안산시', '안양': '안양시',
+  '평택': '평택시', '시흥': '시흥시', '화성': '화성시', '남양주': '남양주시',
+  '의정부': '의정부시', '파주': '파주시', '김포': '김포시', '광명': '광명시',
+  // 서울 주요 구
+  '강남': '서울 강남구', '서초': '서울 서초구', '송파': '서울 송파구',
+  '마포': '서울 마포구', '홍대': '서울 마포구 홍대', '신촌': '서울 서대문구 신촌',
+  '종로': '서울 종로구', '노원': '서울 노원구', '강서': '서울 강서구',
+  '영등포': '서울 영등포구', '동작': '서울 동작구', '관악': '서울 관악구',
+  // 강원
+  '춘천': '춘천시', '원주': '원주시', '강릉': '강릉시',
+  // 충청
+  '청주': '청주시', '천안': '천안시', '아산': '아산시',
+  // 전라
+  '전주': '전주시', '익산': '익산시', '목포': '목포시', '순천': '순천시', '여수': '여수시',
+  // 경상
+  '포항': '포항시', '구미': '구미시', '경주': '경주시', '안동': '안동시',
+  '창원': '창원시', '진주': '진주시', '김해': '김해시', '거제': '거제시',
+  // 제주
+  '제주': '제주시', '서귀포': '서귀포시',
+}
+
+/** 메시지에서 첫 번째 지역명을 추출 */
+function detectLocation(msg: string): string | null {
+  // 긴 이름 먼저 매칭 (예: '남양주'가 '양주'보다 먼저 매칭되어야 함)
+  const sortedKeys = Object.keys(LOCATION_MAP).sort((a, b) => b.length - a.length)
+  for (const key of sortedKeys) {
+    if (msg.includes(key)) return LOCATION_MAP[key]
+  }
+  return null
+}
+
+/** 지역명으로 지도 링크 배열 생성 */
+function buildMapLinks(location: string, query = '동물병원'): MapLink[] {
+  const q = encodeURIComponent(`${location} ${query}`)
+  return [
+    { label: `🗺️ 네이버 — ${location}`, url: `https://map.naver.com/v5/search/${q}`, color: 'naver' },
+    { label: `🟡 카카오맵 — ${location}`, url: `https://map.kakao.com/?q=${q}`, color: 'kakao' },
+    { label: `📍 구글맵 — ${location}`, url: `https://www.google.com/maps/search/${q}`, color: 'google' },
+    { label: `🌙 24시간 응급`, url: `https://map.naver.com/v5/search/${encodeURIComponent(location + ' 24시간 동물병원')}`, color: 'red' },
+  ]
+}
 
 interface Rule {
   keywords: string[]
@@ -191,11 +247,69 @@ function detectAction(message: string): SystemAction {
   return { intent: 'mixed', recommended_module: 'chat', urgency_level: 'low', requires_hospital: false }
 }
 
+// ── 병원 관련 키워드 판별 ─────────────────────────────────────
+const HOSPITAL_SEARCH_KEYWORDS = [
+  '병원 찾', '동물병원', '병원 어디', '병원 알려', '가까운 병원', '근처 병원',
+  '주변 병원', '병원 추천', '수의사', '병원 찾아줘', '병원 찾아', '병원 위치',
+  '어디 병원', '병원이 어디', '동물 병원', '고양이병원', '고양이 병원',
+]
+
+function isHospitalSearchQuery(msg: string): boolean {
+  return HOSPITAL_SEARCH_KEYWORDS.some((k) => msg.includes(k))
+}
+
+/** 지역명 + 병원 쿼리 → 맞춤 답변 + 지도 링크 */
+function hospitalLocationReply(location: string): { reply: string; action: SystemAction } {
+  const links = buildMapLinks(location)
+  return {
+    reply: `${location} 동물병원을 찾고 계시군요! 🏥\n\n아래 지도 링크를 누르면 **${location} 주변 동물병원**을 바로 찾을 수 있어요.\n\n**빠른 방법:**\n• 🗺️ 네이버 지도 → 전화번호·리뷰 확인\n• 🟡 카카오맵 → 거리·영업시간 확인\n• 🌙 24시간 응급 병원도 별도로 찾을 수 있어요\n\n📌 방문 전 꼭 전화로 진료 가능 여부 확인해주세요!`,
+    action: {
+      intent: 'hospital',
+      recommended_module: 'hospital',
+      urgency_level: 'low',
+      requires_hospital: false,
+      map_links: links,
+    },
+  }
+}
+
+/** 지역 모를 때 → 어디 사세요? 물어보기 */
+function hospitalAskLocationReply(): { reply: string; action: SystemAction } {
+  return {
+    reply: `가까운 동물병원을 찾아드릴게요! 🏥\n\n**어느 지역**이세요? 지역을 알려주시면 해당 지역 동물병원 지도 링크를 바로 보내드릴게요!\n\n예) "강남이야", "대구야", "부산 병원 찾아줘"\n\n또는 **병원 탭 → GPS 켜기**를 이용하면 현재 위치에서 가장 가까운 병원을 자동으로 찾아드려요! 📍`,
+    action: {
+      intent: 'hospital',
+      recommended_module: 'hospital',
+      urgency_level: 'low',
+      requires_hospital: false,
+      ask_location: true,
+    },
+  }
+}
+
 // FAQ에서 먼저 찾기 (API 키 없어도 상세 답변)
 function faqLookup(message: string): { reply: string; action: SystemAction } | null {
   const msg = message.toLowerCase()
+
+  // ── 1순위: 병원 찾기 + 지역명 감지 ──────────────────────────
+  if (isHospitalSearchQuery(msg)) {
+    const location = detectLocation(message)
+    if (location) return hospitalLocationReply(location)
+    return hospitalAskLocationReply()
+  }
+
+  // ── 2순위: 지역명만 있는 경우 (예: "대구야", "서울인데 병원") ──
+  const location = detectLocation(message)
+  const hasHospitalHint = msg.includes('병원') || msg.includes('수의사') || msg.includes('치료') || msg.includes('진찰')
+  if (location && hasHospitalHint) {
+    return hospitalLocationReply(location)
+  }
+
+  // ── 3순위: 일반 FAQ 매칭 ───────────────────────────────────
   for (const faq of FAQ) {
     if (faq.keywords.some((k) => msg.includes(k.toLowerCase()))) {
+      // FAQ가 병원 관련이고 지역이 있으면 링크도 추가
+      const mapLinks = faq.module === 'hospital' && location ? buildMapLinks(location) : undefined
       return {
         reply: faq.reply,
         action: {
@@ -203,6 +317,7 @@ function faqLookup(message: string): { reply: string; action: SystemAction } | n
           recommended_module: faq.module,
           urgency_level: faq.urgency,
           requires_hospital: faq.hospital,
+          ...(mapLinks ? { map_links: mapLinks } : {}),
         },
       }
     }
@@ -288,9 +403,17 @@ export async function askAI(
     const raw: string = data.choices?.[0]?.message?.content ?? ''
     const { text, action } = parseAction(raw)
 
+    const baseAction = action ?? detectAction(message)
+
+    // GPT가 병원을 추천했는데 지역이 있으면 지도 링크 자동 추가
+    if (baseAction.recommended_module === 'hospital' && !baseAction.map_links) {
+      const loc = detectLocation(message)
+      if (loc) baseAction.map_links = buildMapLinks(loc)
+    }
+
     return {
       reply: text || '죄송해요, 다시 한번 말씀해 주세요 😅',
-      action: action ?? detectAction(message),
+      action: baseAction,
     }
   } catch {
     const faq = faqLookup(message)
@@ -299,9 +422,21 @@ export async function askAI(
 }
 
 function fallback(message: string): { reply: string; action: SystemAction } {
+  // 병원 검색 + 지역 감지는 faqLookup이 처리하므로
+  // fallback 에서도 지역 감지 시도
+  if (isHospitalSearchQuery(message.toLowerCase())) {
+    const location = detectLocation(message)
+    if (location) return hospitalLocationReply(location)
+    return hospitalAskLocationReply()
+  }
+
+  const location = detectLocation(message)
+  const hasHospitalHint = message.includes('병원') || message.includes('수의사')
+  if (location && hasHospitalHint) return hospitalLocationReply(location)
+
   const action = detectAction(message)
   const replies: Record<string, string> = {
-    hospital:  '병원 탭에서 GPS를 켜면 현재 위치 기준으로 네이버·카카오·구글 지도로 주변 동물병원을 바로 찾을 수 있어요! 🏥 병원 탭으로 이동해 볼까요?',
+    hospital:  '병원 탭에서 GPS를 켜면 현재 위치 기준으로 네이버·카카오·구글 지도로 주변 동물병원을 바로 찾을 수 있어요! 🏥',
     commerce:  '쇼핑 탭에서 국내(펫프렌즈·쿠팡)·해외(Chewy·iHerb) 사이트와 카테고리별 추천 제품을 확인해보세요! 🛒',
     education: '고양이 행동은 이해하면 정말 재미있어요 😺 캡 스쿨에서 단계별 강의를 수강해보세요!',
     community: '동네 집사님들과 정보를 나눠보세요 🏘️ 커뮤니티 동네 소식통에서 직접 글을 올릴 수 있어요!',
